@@ -5,6 +5,7 @@ members = [
     "crates/furukawa_domain",
     "crates/furukawa_infra_docker",
     "crates/furukawa_infra_fs",
+    "crates/furukawa_infra_db",
     "wsl/furukawad",
     "windows/service",
 ]
