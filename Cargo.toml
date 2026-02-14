@@ -1,0 +1,26 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/furukawa_common",
+    "crates/furukawa_domain",
+    "crates/furukawa_infra_docker",
+    "crates/furukawa_infra_fs",
+    "wsl/furukawad",
+    "windows/service",
+]
+
+[workspace.lints.rust]
+unsafe_code = "deny"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+pedantic = "warn"
+unwrap_used = "deny"
+panic = "deny"
+wildcard_imports = "deny"
+module_name_repetitions = "allow" # Common in domain names like container::container_id
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1

@@ -1,0 +1,11 @@
+[package]
+name = "furukawa_service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+furukawa_common = { path = "../../crates/furukawa_common" }
+windows-service = "0.7"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+anyhow = "1.0"

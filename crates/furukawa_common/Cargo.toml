@@ -1,0 +1,14 @@
+[package]
+name = "furukawa_common"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+tracing = "0.1"
+opentelemetry = "0.22"
+opentelemetry_sdk = { version = "0.22", features = ["rt-tokio"] }
+tracing-opentelemetry = "0.23"
+uuid = { version = "1.0", features = ["v4", "fast-rng", "macro-diagnostics"] }
+time = { version = "0.3", features = ["serde", "formatting"] }

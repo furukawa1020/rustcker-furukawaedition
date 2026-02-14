@@ -1,0 +1,13 @@
+[package]
+name = "furukawa_infra_fs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+furukawa_domain = { path = "../furukawa_domain" }
+furukawa_common = { path = "../furukawa_common" }
+tokio = { version = "1.36", features = ["fs"] }
+tracing = "0.1"
+thiserror = "1.0"
+sha2 = "0.10"
+walkdir = "2.4"

@@ -1,0 +1,12 @@
+[package]
+name = "furukawa_domain"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# NO ASYNC RUNTIME HERE. Pure Rust.
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+furukawa_common = { path = "../furukawa_common" }
+tracing = "0.1"
+regex = "1.10"
