@@ -35,6 +35,7 @@ pub struct ContainerConfig {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct ContainerCreateResponse {
+    pub id: String,
     pub warnings: Vec<String>,
 }
 
