@@ -50,6 +50,19 @@ impl ContainerStore for SqliteStore {
         Ok(())
     }
 
+    async fn list(&self) -> Result<Vec<Container<Created>>> {
+        let rows: Vec<(String,)> = sqlx::query_as("SELECT id FROM containers WHERE state = 'created'")
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
+
+        let containers = rows.into_iter()
+            .map(|(id,)| Container::new(id))
+            .collect();
+            
+        Ok(containers)
+    }
+
     async fn get(&self, id: &str) -> Result<Option<Container<Created>>> {
         let row: Option<(String,)> = sqlx::query_as("SELECT id FROM containers WHERE id = ? AND state = 'created'")
             .bind(id)
