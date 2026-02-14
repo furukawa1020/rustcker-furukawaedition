@@ -15,7 +15,13 @@ async fn main() -> anyhow::Result<()> {
     // Check minimal dependencies
     let _ = furukawa_domain::container::Created;
     
-    let app = api::router();
+    // Initialize Persistence
+    // In production, this path comes from config
+    let db_url = "sqlite://furukawa.db?mode=rwc"; 
+    let store = furukawa_infra_db::SqliteStore::new(db_url).await.unwrap();
+    let state = state::AppState::new(store);
+
+    let app = api::router(state);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:2375").await.unwrap();
     info!("API Server listening on 127.0.0.1:2375");
     axum::serve(listener, app).await.unwrap();
@@ -24,3 +30,4 @@ async fn main() -> anyhow::Result<()> {
 }
 
 mod api;
+mod state;

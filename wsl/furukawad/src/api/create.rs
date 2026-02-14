@@ -1,8 +1,9 @@
-use axum::{extract::{Query, Json}, response::IntoResponse, Json as AxumJson};
+use axum::{extract::{Query, Json, State}, response::IntoResponse, Json as AxumJson};
 use furukawa_infra_docker::v1_45::{ContainerConfig, ContainerCreateResponse};
 use serde::Deserialize;
 use tracing::info;
 use furukawa_domain::container::Container;
+use crate::state::AppState;
 
 use uuid::Uuid;
 
@@ -13,6 +14,7 @@ pub struct CreateQueryParams {
 }
 
 pub async fn handle(
+    State(state): State<AppState>,
     Query(params): Query<CreateQueryParams>,
     Json(body): Json<ContainerConfig>,
 ) -> impl IntoResponse {
@@ -33,10 +35,11 @@ pub async fn handle(
     // - Create filesystem layer (COW)
     
     // STRICT: Initialize pure Rust domain object
-    let _container = Container::new(id.clone());
+    let container = Container::new(id.clone());
     
-    // 3. Persist State (TODO: SQLite)
-    // For now, we simulate success.
+    // 3. Persist State (SQLite)
+    // We unwrap here for prototype phase, but in production this maps to 500
+    state.container_store.save(&container).await.unwrap();
 
     let resp = ContainerCreateResponse {
         id,
