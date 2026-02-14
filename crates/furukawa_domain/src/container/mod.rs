@@ -66,7 +66,7 @@ impl Container<Created> {
         }
     }
 
-    pub async fn start(self, runtime: &impl runtime::ContainerRuntime) -> Result<Container<Running>, Error> {
+    pub async fn start(self, runtime: &(impl runtime::ContainerRuntime + ?Sized)) -> Result<Container<Running>, Error> {
         let running_state = runtime.start(&self).await?;
         Ok(Container {
             id: self.id,
@@ -77,7 +77,7 @@ impl Container<Created> {
 }
 
 impl Container<Running> {
-    pub async fn stop(self, runtime: &impl runtime::ContainerRuntime) -> Result<Container<Stopped>, Error> {
+    pub async fn stop(self, runtime: &(impl runtime::ContainerRuntime + ?Sized)) -> Result<Container<Stopped>, Error> {
         // In a real implementation, we'd runtime.stop(&self)
         // For now, just return state
         Ok(Container {
