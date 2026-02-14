@@ -16,14 +16,22 @@ impl Diagnosable for ContainerError {
     }
 }
 
+pub mod config;
+pub use config::Config;
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Container<S> {
     id: String,
+    config: Config,
     state: S,
 }
 
-impl<S> Container<S> {
     pub fn id(&self) -> &str {
         &self.id
+    }
+
+    pub fn config(&self) -> &Config {
+        &self.config
     }
 
     pub fn state(&self) -> &S {
@@ -35,37 +43,50 @@ impl<S> Container<S> {
 // States
 #[derive(Debug, PartialEq)]
 pub struct Created;
+
 #[derive(Debug, PartialEq)]
-pub struct Running;
+pub struct Running {
+    pub pid: u32,
+    pub started_at: time::OffsetDateTime,
+}
+
 #[derive(Debug, PartialEq)]
-pub struct Stopped;
+pub struct Stopped {
+    pub finished_at: time::OffsetDateTime,
+    pub exit_code: i32,
+}
 
 impl Container<Created> {
-    pub fn new(id: String) -> self::Container<Created> {
+    pub fn new(id: String, config: Config) -> self::Container<Created> {
         Container {
             id,
+            config,
             state: Created,
         }
     }
 
-    pub fn start(self) -> Result<Container<Running>, Error> {
-        // Validation logic would go here
-        Ok(Container {
-            id: self.id,
-            state: Running,
-        })
+    pub async fn start(self, runtime: &impl runtime::ContainerRuntime) -> Result<Container<Running>, Error> {
+        runtime.start(&self).await
     }
 }
 
 impl Container<Running> {
-    pub fn stop(self) -> Result<Container<Stopped>, Error> {
+    pub async fn stop(self, runtime: &impl runtime::ContainerRuntime) -> Result<Container<Stopped>, Error> {
+        // In a real implementation, we'd runtime.stop(&self)
+        // For now, just return state
         Ok(Container {
             id: self.id,
-            state: Stopped,
+            config: self.config,
+            state: Stopped {
+                finished_at: time::OffsetDateTime::now_utc(),
+                exit_code: 0,
+            },
         })
     }
 }
 
 mod tests;
 pub mod store;
+pub mod runtime;
+
 

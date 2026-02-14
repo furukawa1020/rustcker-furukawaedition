@@ -1,0 +1,14 @@
+[package]
+name = "furukawa_infra_runtime"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+furukawa_domain = { path = "../furukawa_domain" }
+furukawa_common = { path = "../furukawa_common" }
+furukawa_infra_fs = { path = "../furukawa_infra_fs" }
+tokio = { version = "1.36", features = ["process", "io-util"] }
+async-trait = "0.1"
+tracing = "0.1"
+thiserror = "1.0"
+anyhow = "1.0"
