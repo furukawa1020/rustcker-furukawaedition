@@ -29,8 +29,11 @@ impl<S> Container<S> {
 
 
 // States
+#[derive(Debug, PartialEq)]
 pub struct Created;
+#[derive(Debug, PartialEq)]
 pub struct Running;
+#[derive(Debug, PartialEq)]
 pub struct Stopped;
 
 impl Container<Created> {

@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::image::Digest;
+
 
     #[test]
     fn test_valid_digest() {
