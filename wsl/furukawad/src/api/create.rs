@@ -2,7 +2,8 @@ use axum::{extract::{Query, Json}, response::IntoResponse, Json as AxumJson};
 use furukawa_infra_docker::v1_45::{ContainerConfig, ContainerCreateResponse};
 use serde::Deserialize;
 use tracing::info;
-use furukawa_domain::container::{Container, Created};
+use furukawa_domain::container::Container;
+
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -18,6 +19,7 @@ pub async fn handle(
     info!(
         image = %body.image,
         name = ?params.name,
+        platform = ?params.platform,
         "Received container creation request"
     );
 
