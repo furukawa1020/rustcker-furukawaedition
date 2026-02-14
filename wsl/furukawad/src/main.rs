@@ -15,5 +15,12 @@ async fn main() -> anyhow::Result<()> {
     // Check minimal dependencies
     let _ = furukawa_domain::container::Created;
     
+    let app = api::router();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:2375").await.unwrap();
+    info!("API Server listening on 127.0.0.1:2375");
+    axum::serve(listener, app).await.unwrap();
+    
     Ok(())
 }
+
+mod api;
