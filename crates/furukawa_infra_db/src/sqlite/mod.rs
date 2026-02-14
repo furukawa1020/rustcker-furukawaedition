@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use furukawa_common::Result;
-use furukawa_domain::container::{store::ContainerStore, Container, Created, Config};
+use furukawa_domain::container::{store::ContainerStore, Container, Created, Config, Running};
 use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite, Row};
 use tracing::info;
 

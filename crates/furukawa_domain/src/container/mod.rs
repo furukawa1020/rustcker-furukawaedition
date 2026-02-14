@@ -26,6 +26,7 @@ pub struct Container<S> {
     state: S,
 }
 
+impl<S> Container<S> {
     pub fn id(&self) -> &str {
         &self.id
     }
