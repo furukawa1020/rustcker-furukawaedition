@@ -66,7 +66,12 @@ impl Container<Created> {
     }
 
     pub async fn start(self, runtime: &impl runtime::ContainerRuntime) -> Result<Container<Running>, Error> {
-        runtime.start(&self).await
+        let running_state = runtime.start(&self).await?;
+        Ok(Container {
+            id: self.id,
+            config: self.config,
+            state: running_state,
+        })
     }
 }
 

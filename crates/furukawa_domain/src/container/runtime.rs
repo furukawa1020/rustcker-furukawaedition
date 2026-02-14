@@ -7,7 +7,7 @@ pub trait ContainerRuntime: Send + Sync {
     /// Starts a container.
     /// This is a low-level operation that spawns the process.
     /// It returns the new `Running` state which includes the PID.
-    async fn start(&self, container: &Container<Created>) -> Result<Container<Running>>;
+    async fn start(&self, container: &Container<Created>) -> Result<Running>;
     
     // Future: stop, kill, pause, etc.
 }

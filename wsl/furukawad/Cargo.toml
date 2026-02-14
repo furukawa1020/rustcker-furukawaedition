@@ -9,6 +9,7 @@ furukawa_domain = { path = "../../crates/furukawa_domain" }
 furukawa_infra_docker = { path = "../../crates/furukawa_infra_docker" }
 furukawa_infra_fs = { path = "../../crates/furukawa_infra_fs" }
 furukawa_infra_db = { path = "../../crates/furukawa_infra_db" }
+furukawa_infra_runtime = { path = "../../crates/furukawa_infra_runtime" }
 
 tokio = { version = "1.36", features = ["full"] }
 axum = { version = "0.7", features = ["macros"] }

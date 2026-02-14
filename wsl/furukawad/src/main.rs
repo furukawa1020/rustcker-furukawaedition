@@ -19,7 +19,8 @@ async fn main() -> anyhow::Result<()> {
     // In production, this path comes from config
     let db_url = "sqlite://furukawa.db?mode=rwc"; 
     let store = furukawa_infra_db::SqliteStore::new(db_url).await.unwrap();
-    let state = state::AppState::new(store);
+    let runtime = furukawa_infra_runtime::ProcessRuntime::default();
+    let state = state::AppState::new(store, runtime);
 
     let app = api::router(state);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:2375").await.unwrap();
