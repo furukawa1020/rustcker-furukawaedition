@@ -18,6 +18,8 @@ impl Diagnosable for ContainerError {
 
 pub struct Container<S> {
     id: String,
+    state: S,
+}
 
 impl<S> Container<S> {
     pub fn state(&self) -> &S {
