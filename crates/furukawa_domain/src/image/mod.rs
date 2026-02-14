@@ -38,3 +38,5 @@ impl Digest {
         &self.0
     }
 }
+
+mod tests;
