@@ -1,4 +1,4 @@
-use std::fmt;
+
 
 /// A trait for errors that provide a diagnostic code and a suggestion for resolution.
 pub trait Diagnosable: std::error::Error {
