@@ -1,6 +1,6 @@
 pub mod create;
+pub mod list;
 pub mod middleware;
-
 
 use axum::{routing::{get, post}, Router};
 use crate::state::AppState;
@@ -9,6 +9,7 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/version", get(version_handler))
         .route("/containers/create", post(create::handle))
+        .route("/containers/json", get(list::handle))
         .layer(axum::middleware::from_fn(middleware::trace_request))
         .with_state(state)
 }
