@@ -22,6 +22,10 @@ pub struct Container<S> {
 }
 
 impl<S> Container<S> {
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
     pub fn state(&self) -> &S {
         &self.state
     }
