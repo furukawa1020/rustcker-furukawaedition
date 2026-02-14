@@ -35,7 +35,11 @@ pub async fn handle(
     // - Create filesystem layer (COW)
     
     // STRICT: Initialize pure Rust domain object
-    let container = Container::new(id.clone());
+    let config = furukawa_domain::container::Config {
+        image: body.image.clone(),
+        cmd: body.cmd.clone().unwrap_or_default(),
+    };
+    let container = Container::new(id.clone(), config);
     
     // 3. Persist State (SQLite)
     // We unwrap here for prototype phase, but in production this maps to 500

@@ -36,10 +36,10 @@ pub async fn handle(
     let summary: Vec<ContainerSummary> = containers.into_iter().map(|c| {
         ContainerSummary {
             id: c.id().to_string(),
-            names: vec![format!("/furukawa-{}", &c.id()[0..8])], // Placeholder name generation
-            image: "alpine:latest".to_string(), // Placeholder, needs storage in DB
+            names: vec![format!("/furukawa-{}", &c.id()[0..8])], 
+            image: c.config().image.clone(),
             image_id: "sha256:placeholder".to_string(),
-            command: "echo hello".to_string(),
+            command: c.config().cmd.join(" "),
             created: 1700000000, // Placeholder timestamp
             ports: vec![],
             labels: HashMap::new(),

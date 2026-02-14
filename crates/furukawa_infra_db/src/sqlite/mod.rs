@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use furukawa_common::Result;
-use furukawa_domain::container::{store::ContainerStore, Container, Created};
-use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite};
+use furukawa_domain::container::{store::ContainerStore, Container, Created, Config};
+use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite, Row};
 use tracing::info;
 
 #[derive(Clone)]
@@ -17,10 +17,15 @@ impl SqliteStore {
             .await?;
 
         // Initialize schema (Strict strictness)
+        // We drop table for now to ensure schema match during dev phase refactor
+        // In real prod, we'd use migrations
+        sqlx::query("DROP TABLE IF EXISTS containers").execute(&pool).await?;
+
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS containers (
                 id TEXT PRIMARY KEY,
                 state TEXT NOT NULL,
+                config JSON NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );"
         )
@@ -36,13 +41,13 @@ impl SqliteStore {
 #[async_trait]
 impl ContainerStore for SqliteStore {
     async fn save(&self, container: &Container<Created>) -> Result<()> {
-        // We only support saving 'Created' state for now as per the FSM definition in this phase.
-        // In a full implementation, we'd enum match on state or have separate tables/columns.
-        
-        // This is a "robust" implementation: it handles conflicts (though ID should be unique).
-        sqlx::query("INSERT INTO containers (id, state) VALUES (?, ?)")
-            .bind(container.id()) // We need to expose ID from Container
+        let config_json = serde_json::to_string(container.config())
+            .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
+
+        sqlx::query("INSERT INTO containers (id, state, config) VALUES (?, ?, ?)")
+            .bind(container.id())
             .bind("created")
+            .bind(config_json)
             .execute(&self.pool)
             .await
             .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
@@ -51,27 +56,39 @@ impl ContainerStore for SqliteStore {
     }
 
     async fn list(&self) -> Result<Vec<Container<Created>>> {
-        let rows: Vec<(String,)> = sqlx::query_as("SELECT id FROM containers WHERE state = 'created'")
+        let rows = sqlx::query("SELECT id, config FROM containers WHERE state = 'created'")
             .fetch_all(&self.pool)
             .await
             .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
 
-        let containers = rows.into_iter()
-            .map(|(id,)| Container::new(id))
-            .collect();
+        let mut containers = Vec::new();
+        for row in rows {
+            let id: String = row.get("id");
+            let config_str: String = row.get("config");
+            let config: Config = serde_json::from_str(&config_str)
+                 .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
+            
+            containers.push(Container::new(id, config));
+        }
             
         Ok(containers)
     }
 
     async fn get(&self, id: &str) -> Result<Option<Container<Created>>> {
-        let row: Option<(String,)> = sqlx::query_as("SELECT id FROM containers WHERE id = ? AND state = 'created'")
+        let row = sqlx::query("SELECT id, config FROM containers WHERE id = ? AND state = 'created'")
             .bind(id)
             .fetch_optional(&self.pool)
             .await
             .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
 
         match row {
-            Some((id,)) => Ok(Some(Container::new(id))),
+            Some(row) => {
+                let id: String = row.get("id");
+                let config_str: String = row.get("config");
+                let config: Config = serde_json::from_str(&config_str)
+                     .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
+                Ok(Some(Container::new(id, config)))
+            },
             None => Ok(None),
         }
     }
@@ -88,5 +105,18 @@ impl furukawa_common::diagnostic::Diagnosable for DbError {
     }
     fn suggestion(&self) -> Option<String> {
         Some("Check database connection or query syntax".to_string())
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+#[error("Serialization error: {0}")]
+struct SerializationError(#[from] serde_json::Error);
+
+impl furukawa_common::diagnostic::Diagnosable for SerializationError {
+    fn code(&self) -> String {
+        "DB_SERIALIZATION_ERROR".to_string()
+    }
+    fn suggestion(&self) -> Option<String> {
+        Some("Check data integrity".to_string())
     }
 }
