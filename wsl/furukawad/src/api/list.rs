@@ -20,6 +20,8 @@ pub async fn handle(
     info!(
         all = ?params.all,
         limit = ?params.limit,
+        size = ?params.size,
+        filters = ?params.filters,
         "Received container list request"
     );
 
