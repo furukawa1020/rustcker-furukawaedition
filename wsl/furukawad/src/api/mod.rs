@@ -1,10 +1,11 @@
-pub mod middleware;
+pub mod create;
 
-use axum::{routing::get, Router};
+use axum::{routing::{get, post}, Router};
 
 pub fn router() -> Router {
     Router::new()
         .route("/version", get(version_handler))
+        .route("/containers/create", post(create::handle))
         .layer(axum::middleware::from_fn(middleware::trace_request))
 }
 

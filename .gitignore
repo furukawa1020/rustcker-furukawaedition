@@ -4,3 +4,11 @@ Cargo.lock
 .idea
 .vscode
 *.iml
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+*.log
+*.err
+state.json
