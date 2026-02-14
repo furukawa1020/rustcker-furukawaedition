@@ -1,5 +1,5 @@
-use axum::{body::Body, extract::Request, http::HeaderValue, middleware::Next, response::Response};
-use furukawa_common::telemetry;
+use axum::{extract::Request, middleware::Next, response::Response};
+
 use tracing::{info, info_span, Instrument};
 use uuid::Uuid;
 
