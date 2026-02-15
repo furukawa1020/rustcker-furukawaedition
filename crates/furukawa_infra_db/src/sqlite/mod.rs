@@ -203,11 +203,17 @@ impl ContainerStore for SqliteStore {
     }
 
     async fn get_status(&self, id: &str) -> Result<Option<String>> {
+        tracing::info!("Checking status for container id: {}", id);
         let row = sqlx::query("SELECT state FROM containers WHERE id = ?")
             .bind(id)
             .fetch_optional(&self.pool)
             .await
             .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
+
+        match &row {
+            Some(r) => tracing::info!("Found container {} with state: {:?}", id, r.get::<String, _>("state")),
+            None => tracing::warn!("Container {} not found in DB", id),
+        }
 
         Ok(row.map(|r| r.get("state")))
     }

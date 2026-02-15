@@ -27,6 +27,39 @@ pub struct Container<S> {
     state: S,
 }
 
+#[derive(Debug, Clone)]
+pub enum AnyContainer {
+    Created(Container<Created>),
+    Running(Container<Running>),
+    Stopped(Container<Stopped>),
+}
+
+impl AnyContainer {
+    pub fn id(&self) -> &str {
+        match self {
+            Self::Created(c) => c.id(),
+            Self::Running(c) => c.id(),
+            Self::Stopped(c) => c.id(),
+        }
+    }
+
+    pub fn config(&self) -> &Config {
+        match self {
+            Self::Created(c) => c.config(),
+            Self::Running(c) => c.config(),
+            Self::Stopped(c) => c.config(),
+        }
+    }
+
+    pub fn status(&self) -> &'static str {
+        match self {
+            Self::Created(_) => "created",
+            Self::Running(_) => "running",
+            Self::Stopped(_) => "exited",
+        }
+    }
+}
+
 impl<S> Container<S> {
     pub fn id(&self) -> &str {
         &self.id
@@ -90,7 +123,15 @@ impl Container<Created> {
     }
 }
 
-impl Container<Running> {
+impl Container<Stopped> {
+    pub fn restore(id: String, config: Config, state: Stopped) -> self::Container<Stopped> {
+        Container {
+            id,
+            config,
+            state,
+        }
+    }
+
     pub async fn stop(self, runtime: &(impl runtime::ContainerRuntime + ?Sized)) -> Result<Container<Stopped>, Error> {
         runtime.stop(&self).await?;
         
