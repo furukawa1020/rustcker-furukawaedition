@@ -79,6 +79,7 @@ impl Container<Running> {
 }
 
 
+impl Container<Created> {
     pub async fn start(self, runtime: &(impl runtime::ContainerRuntime + ?Sized)) -> Result<Container<Running>, Error> {
         let running_state = runtime.start(&self).await?;
         Ok(Container {
