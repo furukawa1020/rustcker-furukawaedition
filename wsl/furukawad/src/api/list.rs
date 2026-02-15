@@ -43,8 +43,8 @@ pub async fn handle(
             created: 1700000000, // Placeholder timestamp
             ports: vec![],
             labels: HashMap::new(),
-            state: "created".to_string(),
-            status: "Created".to_string(),
+            state: c.status().to_string(),
+            status: c.status().to_uppercase(), // "created" -> "CREATED"
             host_config: HostConfigSummary {
                 network_mode: "default".to_string(),
             },

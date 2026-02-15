@@ -107,22 +107,50 @@ impl ContainerStore for SqliteStore {
         Ok(())
     }
 
-    async fn list(&self) -> Result<Vec<Container<Created>>> {
-        let rows = sqlx::query("SELECT id, config FROM containers WHERE state = 'created'")
+    async fn list(&self) -> Result<Vec<furukawa_domain::container::AnyContainer>> {
+        use furukawa_domain::container::{AnyContainer, Container, Created, Running, Stopped, Config};
+
+        let rows = sqlx::query("SELECT id, config, state, pid, created_at FROM containers")
             .fetch_all(&self.pool)
             .await
             .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
 
         let mut containers = Vec::new();
+
         for row in rows {
             let id: String = row.get("id");
             let config_str: String = row.get("config");
+            let state_str: String = row.get("state");
+            let pid: Option<u32> = row.get("pid");
+
             let config: Config = serde_json::from_str(&config_str)
-                 .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
-            
-            containers.push(Container::new(id, config));
+                .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
+
+            match state_str.as_str() {
+                "created" => {
+                    containers.push(AnyContainer::Created(Container::new(id, config)));
+                }
+                "running" => {
+                    let pid = pid.unwrap_or(0); 
+                    let state = Running {
+                        pid,
+                        started_at: time::OffsetDateTime::now_utc(), 
+                    };
+                    containers.push(AnyContainer::Running(Container::restore(id, config, state)));
+                }
+                "stopped" => {
+                    let state = Stopped {
+                        finished_at: time::OffsetDateTime::now_utc(), 
+                        exit_code: 0, 
+                    };
+                    containers.push(AnyContainer::Stopped(Container::restore(id, config, state)));
+                }
+                _ => {
+                    tracing::warn!("Unknown state {} for container {}", state_str, id);
+                }
+            }
         }
-            
+        
         Ok(containers)
     }
 
