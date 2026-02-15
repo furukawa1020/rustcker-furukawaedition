@@ -192,6 +192,25 @@ impl ContainerStore for SqliteStore {
             None => Ok(None),
         }
     }
+
+    async fn delete(&self, id: &str) -> Result<()> {
+        sqlx::query("DELETE FROM containers WHERE id = ?")
+            .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
+        Ok(())
+    }
+
+    async fn get_status(&self, id: &str) -> Result<Option<String>> {
+        let row = sqlx::query("SELECT state FROM containers WHERE id = ?")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
+
+        Ok(row.map(|r| r.get("state")))
+    }
 }
 
 // Map sqlx errors to our Diagnosable error

@@ -10,4 +10,6 @@ pub trait ContainerStore: Send + Sync {
     async fn list(&self) -> Result<Vec<Container<super::Created>>>;
     async fn get(&self, id: &str) -> Result<Option<Container<super::Created>>>; 
     async fn get_running(&self, id: &str) -> Result<Option<Container<super::Running>>>;
+    async fn delete(&self, id: &str) -> Result<()>;
+    async fn get_status(&self, id: &str) -> Result<Option<String>>;
 }
