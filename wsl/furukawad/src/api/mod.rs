@@ -1,6 +1,7 @@
 pub mod create;
 pub mod list;
 pub mod start;
+pub mod stop;
 pub mod middleware;
 
 use axum::{routing::{get, post}, Router};
@@ -12,6 +13,7 @@ pub fn router(state: AppState) -> Router {
         .route("/containers/create", post(create::handle))
         .route("/containers/json", get(list::handle))
         .route("/containers/:id/start", post(start::handle))
+        .route("/containers/:id/stop", post(stop::handle))
         .layer(axum::middleware::from_fn(middleware::trace_request))
         .with_state(state)
 }

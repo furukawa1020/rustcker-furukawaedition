@@ -1,3 +1,5 @@
+mod process_control;
+
 use async_trait::async_trait;
 use furukawa_domain::container::{Container, Created, Running};
 use furukawa_domain::container::runtime::ContainerRuntime;
@@ -44,6 +46,11 @@ impl ContainerRuntime for ProcessRuntime {
             pid,
             started_at: time::OffsetDateTime::now_utc(),
         })
+    }
+
+    async fn stop(&self, container: &Container<Running>) -> Result<(), Error> {
+        let pid = container.state().pid;
+        process_control::stop_container(pid)
     }
 }
 

@@ -9,5 +9,7 @@ pub trait ContainerRuntime: Send + Sync {
     /// It returns the new `Running` state which includes the PID.
     async fn start(&self, container: &Container<Created>) -> Result<Running>;
     
-    // Future: stop, kill, pause, etc.
+    /// Stops a running container.
+    /// This attempts to gracefully shut down the process.
+    async fn stop(&self, container: &Container<Running>) -> Result<()>;
 }

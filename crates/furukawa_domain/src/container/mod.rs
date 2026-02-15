@@ -18,6 +18,7 @@ impl Diagnosable for ContainerError {
 
 pub mod config;
 pub use config::Config;
+pub mod state_serde;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Container<S> {
@@ -65,6 +66,18 @@ impl Container<Created> {
             state: Created,
         }
     }
+}
+
+impl Container<Running> {
+    pub fn restore(id: String, config: Config, state: Running) -> self::Container<Running> {
+        Container {
+            id,
+            config,
+            state,
+        }
+    }
+}
+
 
     pub async fn start(self, runtime: &(impl runtime::ContainerRuntime + ?Sized)) -> Result<Container<Running>, Error> {
         let running_state = runtime.start(&self).await?;
@@ -78,8 +91,8 @@ impl Container<Created> {
 
 impl Container<Running> {
     pub async fn stop(self, runtime: &(impl runtime::ContainerRuntime + ?Sized)) -> Result<Container<Stopped>, Error> {
-        // In a real implementation, we'd runtime.stop(&self)
-        // For now, just return state
+        runtime.stop(&self).await?;
+        
         Ok(Container {
             id: self.id,
             config: self.config,
