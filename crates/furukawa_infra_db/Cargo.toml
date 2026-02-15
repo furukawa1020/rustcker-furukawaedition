@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 furukawa_domain = { path = "../furukawa_domain" }
 furukawa_common = { path = "../furukawa_common" }
-sqlx = { version = "0.7", features = ["runtime-tokio", "sqlite"] }
+sqlx = { version = "0.7", features = ["runtime-tokio", "sqlite", "time"] }
 tokio = { version = "1.36", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -14,3 +14,4 @@ tracing = "0.1"
 thiserror = "1.0"
 async-trait = "0.1"
 anyhow = "1.0"
+time = { version = "0.3", features = ["serde"] }

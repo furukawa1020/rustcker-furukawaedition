@@ -6,7 +6,7 @@ use furukawa_domain::container::runtime::ContainerRuntime;
 use furukawa_common::diagnostic::Error;
 use std::process::Stdio;
 use tokio::process::Command;
-use tracing::{info, warn};
+use tracing::info;
 
 #[derive(Default, Clone)]
 pub struct ProcessRuntime;
