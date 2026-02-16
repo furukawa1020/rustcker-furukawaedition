@@ -47,3 +47,6 @@ pub use version::*;
 
 mod system_info;
 pub use system_info::*;
+
+mod image;
+pub use image::*;
