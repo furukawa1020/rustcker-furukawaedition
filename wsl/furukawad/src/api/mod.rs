@@ -4,6 +4,7 @@ pub mod start;
 pub mod stop;
 pub mod delete;
 pub mod logs;
+pub mod inspect;
 pub mod middleware;
 
 use axum::{routing::{get, post}, Router};
@@ -18,6 +19,7 @@ pub fn router(state: AppState) -> Router {
         .route("/containers/:id/stop", post(stop::handle))
         .route("/containers/:id", axum::routing::delete(delete::handle))
         .route("/containers/:id/logs", get(logs::handle))
+        .route("/containers/:id/json", get(inspect::handle))
         .layer(axum::middleware::from_fn(middleware::trace_request))
         .with_state(state)
 }
