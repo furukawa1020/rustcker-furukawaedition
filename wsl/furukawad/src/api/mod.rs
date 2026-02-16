@@ -7,6 +7,7 @@ pub mod logs;
 pub mod inspect;
 pub mod version;
 pub mod info;
+pub mod images;
 pub mod middleware;
 
 use axum::{routing::{get, post}, Router};
@@ -16,6 +17,7 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/version", get(version::handle))
         .route("/info", get(info::handle))
+        .route("/images/json", get(images::handle))
         .route("/containers/create", post(create::handle))
         .route("/containers/json", get(list::handle))
         .route("/containers/:id/start", post(start::handle))
