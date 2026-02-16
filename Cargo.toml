@@ -7,6 +7,7 @@ members = [
     "crates/furukawa_infra_fs",
     "crates/furukawa_infra_db",
     "crates/furukawa_infra_runtime",
+    "crates/furukawa_infra_registry",
     "wsl/furukawad",
     "windows/service",
     "desktop/src-tauri",
