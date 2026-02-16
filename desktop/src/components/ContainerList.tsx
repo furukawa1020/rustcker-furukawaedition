@@ -1,111 +1,113 @@
-import React, { useEffect, useState } from 'react';
-import type { ContainerSummary } from '../api/client';
-import { Api } from '../api/client';
+import { useState, useEffect } from 'react';
+import { CreateContainerModal } from './CreateContainerModal';
 
-export const ContainerList: React.FC = () => {
-    const [containers, setContainers] = useState<ContainerSummary[]>([]);
+interface Container {
+    Id: string;
+    Names: string[];
+    Image: string;
+    State: string;
+    Status: string;
+}
+
+export const ContainerList = () => {
+    const [containers, setContainers] = useState<Container[]>([]);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [isCreateModalOpen, setCreateModalOpen] = useState(false);
 
     const fetchContainers = async () => {
-        setLoading(true);
         try {
-            const data = await Api.listContainers();
+            const res = await fetch('http://localhost:2375/containers/json?all=true');
+            const data = await res.json();
             setContainers(data);
-            setError(null);
         } catch (err) {
-            setError("Failed to load containers");
-        } finally {
-            setLoading(false);
+            console.error(err);
         }
     };
 
     useEffect(() => {
         fetchContainers();
-        const interval = setInterval(fetchContainers, 3000); // Auto-refresh
+        const interval = setInterval(fetchContainers, 3000);
         return () => clearInterval(interval);
     }, []);
 
-    const handleAction = async (action: 'start' | 'stop' | 'delete', id: string) => {
+    const handleAction = async (id: string, action: 'start' | 'stop' | 'delete') => {
+        setLoading(true);
         try {
-            if (action === 'start') await Api.startContainer(id);
-            if (action === 'stop') await Api.stopContainer(id);
-            if (action === 'delete') {
-                if (!confirm("Are you sure you want to delete this container?")) return;
-                await Api.deleteContainer(id);
-            }
-            fetchContainers(); // Refresh immediately
+            const method = action === 'delete' ? 'DELETE' : 'POST';
+            const url = action === 'delete'
+                ? `http://localhost:2375/containers/${id}`
+                : `http://localhost:2375/containers/${id}/${action}`;
+
+            await fetch(url, { method });
+            await fetchContainers();
         } catch (err) {
+            console.error(err);
             alert(`Failed to ${action} container`);
+        } finally {
+            setLoading(false);
         }
     };
 
-    if (error) return <div className="error-message">{error}</div>;
-
     return (
-        <div className="container-list-view">
-            <header>
-                <h1>Containers</h1>
-                <button onClick={fetchContainers} className="refresh-btn" disabled={loading}>
-                    {loading ? '...' : '🔄 Refresh'}
-                </button>
-            </header>
-
-            <div className="table-container card">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Image</th>
-                            <th>State</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {containers.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} className="empty-state">No containers found.</td>
-                            </tr>
-                        ) : (
-                            containers.map((c) => (
-                                <tr key={c.Id}>
-                                    <td className="font-mono">
-                                        {c.Names[0]?.replace(/^\//, '') || c.Id.substring(0, 12)}
-                                    </td>
-                                    <td><span className="badge">{c.Image}</span></td>
-                                    <td>
-                                        <span className={`status-dot ${c.State}`}></span>
-                                        {c.State}
-                                    </td>
-                                    <td className="text-secondary">{c.Status}</td>
-                                    <td className="actions">
-                                        {c.State !== 'running' && (
-                                            <button
-                                                className="btn-icon success"
-                                                title="Start"
-                                                onClick={() => handleAction('start', c.Id)}
-                                            >▶</button>
-                                        )}
-                                        {c.State === 'running' && (
-                                            <button
-                                                className="btn-icon danger"
-                                                title="Stop"
-                                                onClick={() => handleAction('stop', c.Id)}
-                                            >⏹</button>
-                                        )}
-                                        <button
-                                            className="btn-icon delete"
-                                            title="Delete"
-                                            onClick={() => handleAction('delete', c.Id)}
-                                        >🗑</button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+        <div className="container-list">
+            <div className="header">
+                <h2>Containers</h2>
+                <button className="primary" onClick={() => setCreateModalOpen(true)}>+ Create</button>
             </div>
+
+            <CreateContainerModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setCreateModalOpen(false)}
+                onSuccess={() => {
+                    fetchContainers();
+                }}
+            />
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Image</th>
+                        <th>State</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {containers.map(c => (
+                        <tr key={c.Id}>
+                            <td>{c.Names[0].replace('/', '')}</td>
+                            <td>{c.Image}</td>
+                            <td>
+                                <span className={`badge ${c.State}`}>
+                                    {c.State}
+                                </span>
+                            </td>
+                            <td>{c.Status}</td>
+                            <td>
+                                <div className="actions">
+                                    <button
+                                        onClick={() => handleAction(c.Id, 'start')}
+                                        disabled={loading || c.State === 'running'}
+                                        title="Start"
+                                    >▶</button>
+                                    <button
+                                        onClick={() => handleAction(c.Id, 'stop')}
+                                        disabled={loading || c.State !== 'running'}
+                                        title="Stop"
+                                    >⏹</button>
+                                    <button
+                                        onClick={() => handleAction(c.Id, 'delete')}
+                                        disabled={loading || c.State === 'running'}
+                                        title="Delete"
+                                        className="danger"
+                                    >🗑</button>
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
     );
 };
