@@ -41,3 +41,6 @@ pub struct ContainerCreateResponse {
 
 mod summary;
 pub use summary::*;
+
+mod version;
+pub use version::*;
