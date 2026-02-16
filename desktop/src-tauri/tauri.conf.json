@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "furukawa-desktop",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "com.furukawa.desktop",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -13,14 +13,14 @@
     "windows": [
       {
         "title": "Furukawa Desktop",
-        "width": 800,
-        "height": 600,
+        "width": 1024,
+        "height": 768,
         "resizable": true,
         "fullscreen": false
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost data:; connect-src 'self' http://127.0.0.1:2375 ws://localhost:5173; style-src 'self' 'unsafe-inline'; font-src 'self';"
     }
   },
   "bundle": {
