@@ -44,3 +44,6 @@ pub use summary::*;
 
 mod version;
 pub use version::*;
+
+mod system_info;
+pub use system_info::*;
