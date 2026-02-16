@@ -5,6 +5,7 @@ pub mod stop;
 pub mod delete;
 pub mod logs;
 pub mod inspect;
+pub mod version;
 pub mod middleware;
 
 use axum::{routing::{get, post}, Router};
@@ -12,7 +13,7 @@ use crate::state::AppState;
 
 pub fn router(state: AppState) -> Router {
     Router::new()
-        .route("/version", get(version_handler))
+        .route("/version", get(version::handle))
         .route("/containers/create", post(create::handle))
         .route("/containers/json", get(list::handle))
         .route("/containers/:id/start", post(start::handle))
@@ -24,8 +25,3 @@ pub fn router(state: AppState) -> Router {
         .with_state(state)
 }
 
-async fn version_handler() -> &'static str {
-    // This will eventually return strictly typed JSON.
-    // For scaffolding verification, simple string is enough to prove flow.
-    "{\"ApiVersion\":\"1.45\",\"Platform\":{\"Name\":\"furukawa-engine\"}}"
-}
