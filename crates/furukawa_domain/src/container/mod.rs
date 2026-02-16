@@ -109,6 +109,19 @@ impl Container<Running> {
             state,
         }
     }
+
+    pub async fn stop(self, runtime: &(impl runtime::ContainerRuntime + ?Sized)) -> Result<Container<Stopped>, Error> {
+        runtime.stop(&self).await?;
+        
+        Ok(Container {
+            id: self.id,
+            config: self.config,
+            state: Stopped {
+                finished_at: time::OffsetDateTime::now_utc(),
+                exit_code: 0,
+            },
+        })
+    }
 }
 
 

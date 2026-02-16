@@ -108,7 +108,7 @@ impl ContainerStore for SqliteStore {
     }
 
     async fn list(&self) -> Result<Vec<furukawa_domain::container::AnyContainer>> {
-        use furukawa_domain::container::{AnyContainer, Container, Created, Running, Stopped, Config};
+        use furukawa_domain::container::{AnyContainer, Container, Running, Stopped, Config};
 
         let rows = sqlx::query("SELECT id, config, state, pid, created_at FROM containers")
             .fetch_all(&self.pool)
@@ -136,14 +136,14 @@ impl ContainerStore for SqliteStore {
                         pid,
                         started_at: time::OffsetDateTime::now_utc(), 
                     };
-                    containers.push(AnyContainer::Running(Container::restore(id, config, state)));
+                    containers.push(AnyContainer::Running(Container::<Running>::restore(id, config, state)));
                 }
                 "stopped" => {
                     let state = Stopped {
                         finished_at: time::OffsetDateTime::now_utc(), 
                         exit_code: 0, 
                     };
-                    containers.push(AnyContainer::Stopped(Container::restore(id, config, state)));
+                    containers.push(AnyContainer::Stopped(Container::<Stopped>::restore(id, config, state)));
                 }
                 _ => {
                     tracing::warn!("Unknown state {} for container {}", state_str, id);
@@ -214,7 +214,7 @@ impl ContainerStore for SqliteStore {
                     started_at: time::OffsetDateTime::now_utc(), // Placeholder, acceptable for now
                 };
 
-                let container = Container::restore(id, config, state);
+                let container = Container::<Running>::restore(id, config, state);
                 Ok(Some(container))
             },
             None => Ok(None),
