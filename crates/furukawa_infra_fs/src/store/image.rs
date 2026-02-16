@@ -1,8 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use tokio::fs::{self, File};
 use tokio::io::AsyncWriteExt;
 use bytes::Bytes;
-use furukawa_domain::image::Digest;
 use furukawa_common::diagnostic::Diagnosable;
 
 #[derive(Debug, thiserror::Error)]

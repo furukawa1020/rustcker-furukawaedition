@@ -1,11 +1,9 @@
 use crate::auth::Authenticator;
 use crate::error::RegistryError;
 use reqwest::{Client, StatusCode, header};
-use serde::Deserialize;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use bytes::Bytes;
-use futures_util::StreamExt;
 
 const DEFAULT_REGISTRY: &str = "https://registry-1.docker.io";
 
@@ -26,7 +24,7 @@ impl RegistryClient {
         }
     }
 
-    async fn authenticate_if_needed(&self, repo: &str, scope: &str) -> Result<String, RegistryError> {
+    async fn authenticate_if_needed(&self, repo: &str, _scope: &str) -> Result<String, RegistryError> {
         // Optimistically try without auth first? Actually Docker Hub requires anon token for public images.
         // We simulate the flow:
         // 1. Request -> 401 Www-Authenticate: Bearer realm="...",service="...",scope="..."

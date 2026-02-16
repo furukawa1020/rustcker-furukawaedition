@@ -1,5 +1,5 @@
 use thiserror::Error;
-use furukawa_common::diagnostic::{Diagnosable, DiagnosticCode, Severity};
+use furukawa_common::diagnostic::Diagnosable;
 
 #[derive(Debug, Error)]
 pub enum RegistryError {
@@ -18,19 +18,15 @@ pub enum RegistryError {
 }
 
 impl Diagnosable for RegistryError {
-    fn code(&self) -> DiagnosticCode {
+    fn code(&self) -> String {
         match self {
-            Self::AuthenticationFailed(_) => DiagnosticCode("REG_AUTH_FAILED"),
-            Self::ManifestNotFound(_) => DiagnosticCode("REG_MANIFEST_MISSING"),
-            Self::BlobNotFound(_) => DiagnosticCode("REG_BLOB_MISSING"),
-            Self::Network(_) => DiagnosticCode("REG_NETWORK_ERROR"),
-            Self::Io(_) => DiagnosticCode("FS_IO_ERROR"),
-            Self::InvalidDigest(_) => DiagnosticCode("REG_DIGEST_MISMATCH"),
+            Self::AuthenticationFailed(_) => "REG_AUTH_FAILED".to_string(),
+            Self::ManifestNotFound(_) => "REG_MANIFEST_MISSING".to_string(),
+            Self::BlobNotFound(_) => "REG_BLOB_MISSING".to_string(),
+            Self::Network(_) => "REG_NETWORK_ERROR".to_string(),
+            Self::Io(_) => "FS_IO_ERROR".to_string(),
+            Self::InvalidDigest(_) => "REG_DIGEST_MISMATCH".to_string(),
         }
-    }
-
-    fn severity(&self) -> Severity {
-        Severity::Error
     }
 
     fn suggestion(&self) -> Option<String> {
