@@ -154,6 +154,54 @@ impl ContainerStore for SqliteStore {
         Ok(containers)
     }
 
+    async fn get_any(&self, id: &str) -> Result<Option<furukawa_domain::container::AnyContainer>> {
+        use furukawa_domain::container::{AnyContainer, Container, Running, Stopped, Config};
+
+        let row = sqlx::query("SELECT id, config, state, pid, created_at FROM containers WHERE id = ?")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
+
+        match row {
+            Some(row) => {
+                let id: String = row.get("id");
+                let config_str: String = row.get("config");
+                let state_str: String = row.get("state");
+                let pid: Option<u32> = row.get("pid");
+
+                let config: Config = serde_json::from_str(&config_str)
+                    .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
+
+                match state_str.as_str() {
+                    "created" => {
+                        Ok(Some(AnyContainer::Created(Container::new(id, config))))
+                    }
+                    "running" => {
+                        let pid = pid.unwrap_or(0); 
+                        let state = Running {
+                            pid,
+                            started_at: time::OffsetDateTime::now_utc(), 
+                        };
+                        Ok(Some(AnyContainer::Running(Container::<Running>::restore(id, config, state))))
+                    }
+                    "stopped" => {
+                        let state = Stopped {
+                            finished_at: time::OffsetDateTime::now_utc(), 
+                            exit_code: 0, 
+                        };
+                        Ok(Some(AnyContainer::Stopped(Container::<Stopped>::restore(id, config, state))))
+                    }
+                    _ => {
+                        tracing::warn!("Unknown state {} for container {}", state_str, id);
+                        Ok(None)
+                    }
+                }
+            },
+            None => Ok(None)
+        }
+    }
+
     async fn get(&self, id: &str) -> Result<Option<Container<Created>>> {
         let row = sqlx::query("SELECT id, config FROM containers WHERE id = ? AND state = 'created'")
             .bind(id)

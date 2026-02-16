@@ -8,6 +8,7 @@ pub trait ContainerStore: Send + Sync {
     async fn save_running(&self, container: &Container<super::Running>) -> Result<()>;
     async fn save_stopped(&self, container: &Container<super::Stopped>) -> Result<()>;
     async fn list(&self) -> Result<Vec<super::AnyContainer>>;
+    async fn get_any(&self, id: &str) -> Result<Option<super::AnyContainer>>;
     async fn get(&self, id: &str) -> Result<Option<Container<super::Created>>>; 
     async fn get_running(&self, id: &str) -> Result<Option<Container<super::Running>>>;
     async fn delete(&self, id: &str) -> Result<()>;

@@ -33,6 +33,14 @@ try {
     Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:2375/containers/$c1/stop"
     Invoke-RestMethod -Method Delete -Uri "http://127.0.0.1:2375/containers/$c1"
     
+    Start-Sleep -Seconds 1
+    if (Test-Path "furukawa_logs\$c1.log") {
+        Write-Error "Log file was NOT removed!"
+    }
+    else {
+        Write-Host "Success: Log file removed." -ForegroundColor Green
+    }
+
 }
 catch {
     Write-Error $_
