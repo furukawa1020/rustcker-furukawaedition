@@ -9,6 +9,7 @@ members = [
     "crates/furukawa_infra_runtime",
     "wsl/furukawad",
     "windows/service",
+    "desktop/src-tauri",
 ]
 
 [workspace.lints.rust]
