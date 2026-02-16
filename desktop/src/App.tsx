@@ -3,6 +3,7 @@ import './App.css';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { ContainerList } from './components/ContainerList';
+import { ImageList } from './components/ImageList';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -13,7 +14,7 @@ function App() {
       <main className="main-content">
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'containers' && <ContainerList />}
-        {activeTab === 'images' && <div className="placeholder">Images View (Coming Soon)</div>}
+        {activeTab === 'images' && <ImageList />}
       </main>
     </>
   );

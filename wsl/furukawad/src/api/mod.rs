@@ -26,6 +26,7 @@ pub fn router(state: AppState) -> Router {
         .route("/containers/:id/logs", get(logs::handle))
         .route("/containers/:id/json", get(inspect::handle))
         .route("/containers/:id", axum::routing::delete(delete::handle))
+        .layer(tower_http::cors::CorsLayer::permissive())
         .layer(axum::middleware::from_fn(middleware::trace_request))
         .with_state(state)
 }
