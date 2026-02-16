@@ -17,9 +17,9 @@ pub fn router(state: AppState) -> Router {
         .route("/containers/json", get(list::handle))
         .route("/containers/:id/start", post(start::handle))
         .route("/containers/:id/stop", post(stop::handle))
-        .route("/containers/:id", axum::routing::delete(delete::handle))
         .route("/containers/:id/logs", get(logs::handle))
         .route("/containers/:id/json", get(inspect::handle))
+        .route("/containers/:id", axum::routing::delete(delete::handle))
         .layer(axum::middleware::from_fn(middleware::trace_request))
         .with_state(state)
 }
