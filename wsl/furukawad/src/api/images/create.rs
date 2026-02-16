@@ -4,20 +4,6 @@ use axum::Json;
 use serde::Deserialize;
 use std::sync::Arc;
 use crate::state::AppState;
-
-#[derive(Deserialize)]
-pub struct CreateImageParams {
-    #[serde(rename = "fromImage")]
-    from_image: String,
-    tag: Option<String>,
-}
-
-use axum::extract::{Query, State};
-use axum::response::IntoResponse;
-use axum::Json;
-use serde::Deserialize;
-use std::sync::Arc;
-use crate::state::AppState;
 use furukawa_infra_registry::manifest::ManifestV2;
 use furukawa_domain::image::store::ImageMetadata;
 
