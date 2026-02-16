@@ -24,10 +24,20 @@ pub async fn handle(
     }
 
     // 3. Delete from DB
-    // In a "10 year" impl, we would also remove log files, checking config for volumes, etc.
     if let Err(e) = state.container_store.delete(&id).await {
-        error!("Failed to delete container: {}", e);
+        error!("Failed to delete container from DB: {}", e);
         return StatusCode::INTERNAL_SERVER_ERROR;
+    }
+
+    // 4. Cleanup Logs (Best effort)
+    let log_path = std::path::Path::new("furukawa_logs").join(format!("{}.log", id));
+    if log_path.exists() {
+        if let Err(e) = tokio::fs::remove_file(&log_path).await {
+            error!("Failed to remove log file for {}: {}", id, e);
+            // We don't fail the request, just log error
+        } else {
+            info!("Removed log file for {}", id);
+        }
     }
 
     info!(id = %id, "Container removed");
