@@ -33,11 +33,117 @@ impl SqliteStore {
         .execute(&pool)
         .await?;
         
+// ... (Existing code) ...
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS images (
+                id TEXT PRIMARY KEY,
+                repo_tags TEXT NOT NULL,
+                parent_id TEXT,
+                created INTEGER,
+                size INTEGER
+            );"
+        )
+        .execute(&pool)
+        .await?;
+        
         info!("SQLite store initialized at {}", database_url);
 
         Ok(Self { pool })
     }
 }
+
+// ... (ContainerStore implementation) ...
+
+use furukawa_domain::image::store::{ImageMetadataStore, ImageMetadata};
+
+#[async_trait]
+impl ImageMetadataStore for SqliteStore {
+    async fn save(&self, metadata: &ImageMetadata) -> Result<()> {
+        let repo_tags_json = serde_json::to_string(&metadata.repo_tags)
+             .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
+
+        sqlx::query("INSERT OR REPLACE INTO images (id, repo_tags, parent_id, created, size) VALUES (?, ?, ?, ?, ?)")
+            .bind(&metadata.id)
+            .bind(repo_tags_json)
+            .bind(&metadata.parent_id)
+            .bind(metadata.created)
+            .bind(metadata.size)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
+        Ok(())
+    }
+
+    async fn list(&self) -> Result<Vec<ImageMetadata>> {
+        let rows = sqlx::query("SELECT id, repo_tags, parent_id, created, size FROM images")
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
+
+        let mut images = Vec::new();
+        for row in rows {
+            let id: String = row.get("id");
+            let repo_tags_str: String = row.get("repo_tags");
+            let parent_id: Option<String> = row.get("parent_id");
+            let created: i64 = row.get("created");
+            let size: i64 = row.get("size");
+
+            let repo_tags: Vec<String> = serde_json::from_str(&repo_tags_str)
+                .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
+
+            images.push(ImageMetadata {
+                id,
+                repo_tags,
+                parent_id,
+                created,
+                size,
+            });
+        }
+        Ok(images)
+    }
+
+    async fn get(&self, id: &str) -> Result<Option<ImageMetadata>> {
+        let row = sqlx::query("SELECT id, repo_tags, parent_id, created, size FROM images WHERE id = ?")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
+
+        match row {
+            Some(row) => {
+                let id: String = row.get("id");
+                let repo_tags_str: String = row.get("repo_tags");
+                let parent_id: Option<String> = row.get("parent_id");
+                let created: i64 = row.get("created");
+                let size: i64 = row.get("size");
+
+                let repo_tags: Vec<String> = serde_json::from_str(&repo_tags_str)
+                    .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
+
+                Ok(Some(ImageMetadata {
+                    id,
+                    repo_tags,
+                    parent_id,
+                    created,
+                    size,
+                }))
+            },
+            None => Ok(None)
+        }
+    }
+
+    async fn exists(&self, id: &str) -> Result<bool> {
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM images WHERE id = ?")
+            .bind(id)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
+        Ok(count > 0)
+    }
+}
+
+// ... (DbError and SerializationError impls) ...
 
 #[async_trait]
 impl ContainerStore for SqliteStore {
