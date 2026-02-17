@@ -25,6 +25,9 @@
   },
   "bundle": {
     "active": true,
+    "externalBin": [
+      "binaries/furukawad"
+    ],
     "targets": [
       "msi",
       "nsis"
