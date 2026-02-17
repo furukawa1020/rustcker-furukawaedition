@@ -1,6 +1,7 @@
 $ErrorActionPreference = "Stop"
 
-$TARGET = "x86_64-pc-windows-msvc"
+$TARGET_MSVC = "x86_64-pc-windows-msvc"
+$TARGET_GNU = "x86_64-pc-windows-gnu"
 $SRC = "../target/release/furukawad.exe"
 $DEST_DIR = "src-tauri/binaries"
 $DEST = "$DEST_DIR/furukawad-$TARGET.exe"
@@ -17,5 +18,6 @@ if (!(Test-Path $SRC)) {
     cargo build --release -p furukawad
 }
 
-Copy-Item $SRC $DEST
-Write-Host "Copied $SRC to $DEST"
+Copy-Item $SRC "$DEST_DIR/furukawad-$TARGET_MSVC.exe"
+Copy-Item $SRC "$DEST_DIR/furukawad-$TARGET_GNU.exe"
+Write-Host "Copied $SRC to $DEST_DIR (both msvc and gnu)"
