@@ -72,20 +72,13 @@ pub async fn handle(
     }
     
     // 4. Save Metadata
-    // Extract 'created' from config if possible
-    let created_str = config_json.get("created").and_then(|v| v.as_str()).unwrap_or("");
-    let created_timestamp = match time::OffsetDateTime::parse(created_str, &time::format_description::well_known::Rfc3339) {
-        Ok(t) => t.unix_timestamp(),
-        Err(_) => time::OffsetDateTime::now_utc().unix_timestamp(),
-    };
-    
-    let metadata = ImageMetadata {
-        id: image_id.to_string(),
-        repo_tags: vec![format!("{}:{}", repo, tag)], 
-        parent_id: config_json.get("parent").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        created: created_timestamp,
-        size: total_size,
-    };
+    let metadata = create_image_metadata(
+        image_id,
+        &repo,
+        tag,
+        &config_json,
+        total_size
+    );
     
     if let Err(e) = state.image_metadata_store.save(&metadata).await {
          return (axum::http::StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to save metadata: {}", e)).into_response();
@@ -94,4 +87,60 @@ pub async fn handle(
     tracing::info!("Image pulled successfully: {}", image_id);
 
     "Pull complete".into_response()
+}
+
+fn create_image_metadata(
+    image_id: &str,
+    repo: &str,
+    tag: &str,
+    config_json: &serde_json::Value,
+    total_size: i64,
+) -> ImageMetadata {
+    // Extract 'created' from config if possible
+    let created_str = config_json.get("created").and_then(|v| v.as_str()).unwrap_or("");
+    let created_timestamp = match time::OffsetDateTime::parse(created_str, &time::format_description::well_known::Rfc3339) {
+        Ok(t) => t.unix_timestamp(),
+        Err(_) => time::OffsetDateTime::now_utc().unix_timestamp(),
+    };
+
+    ImageMetadata {
+        id: image_id.to_string(),
+        repo_tags: vec![format!("{}:{}", repo, tag)], 
+        parent_id: config_json.get("parent").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        created: created_timestamp,
+        size: total_size,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_create_image_metadata_with_parent() {
+        let config = json!({
+            "created": "2023-01-01T00:00:00Z",
+            "parent": "sha256:parent123"
+        });
+        
+        let meta = create_image_metadata("id123", "lib/repo", "latest", &config, 1000);
+        
+        assert_eq!(meta.id, "id123");
+        assert_eq!(meta.repo_tags, vec!["lib/repo:latest"]);
+        assert_eq!(meta.parent_id, Some("sha256:parent123".to_string()));
+        assert_eq!(meta.size, 1000);
+        assert_eq!(meta.created, 1672531200);
+    }
+
+    #[test]
+    fn test_create_image_metadata_no_parent() {
+        let config = json!({
+            "created": "2023-01-01T00:00:00Z"
+        });
+        
+        let meta = create_image_metadata("id123", "lib/repo", "latest", &config, 1000);
+        
+        assert_eq!(meta.parent_id, None);
+    }
 }
