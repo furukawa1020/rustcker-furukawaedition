@@ -60,15 +60,26 @@ use furukawa_domain::image::store::{ImageMetadataStore, ImageMetadata};
 #[async_trait]
 impl ImageMetadataStore for SqliteStore {
     async fn save(&self, metadata: &ImageMetadata) -> Result<()> {
-        let repo_tags_json = serde_json::to_string(&metadata.repo_tags)
+        let mut final_metadata = metadata.clone();
+
+        // Check if image already exists and merge tags
+        if let Some(existing) = self.get(&metadata.id).await? {
+            for tag in existing.repo_tags {
+                if !final_metadata.repo_tags.contains(&tag) {
+                    final_metadata.repo_tags.push(tag);
+                }
+            }
+        }
+
+        let repo_tags_json = serde_json::to_string(&final_metadata.repo_tags)
              .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
 
         sqlx::query("INSERT OR REPLACE INTO images (id, repo_tags, parent_id, created, size) VALUES (?, ?, ?, ?, ?)")
-            .bind(&metadata.id)
+            .bind(&final_metadata.id)
             .bind(repo_tags_json)
-            .bind(&metadata.parent_id)
-            .bind(metadata.created)
-            .bind(metadata.size)
+            .bind(&final_metadata.parent_id)
+            .bind(final_metadata.created)
+            .bind(final_metadata.size)
             .execute(&self.pool)
             .await
             .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
