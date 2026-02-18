@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use tokio::fs::{self, File};
 use tokio::io::AsyncWriteExt;
 use bytes::Bytes;
-use furukawa_common::diagnostic::Diagnosable;
+
 
 #[derive(Debug, thiserror::Error)]
 pub enum StoreError {

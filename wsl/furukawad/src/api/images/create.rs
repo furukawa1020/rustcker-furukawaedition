@@ -1,8 +1,6 @@
 use axum::extract::{Query, State};
 use axum::response::IntoResponse;
-use axum::Json;
 use serde::Deserialize;
-use std::sync::Arc;
 use crate::state::AppState;
 use furukawa_infra_registry::manifest::ManifestV2;
 use furukawa_domain::image::store::ImageMetadata;
@@ -83,8 +81,8 @@ pub async fn handle(
     
     let metadata = ImageMetadata {
         id: image_id.to_string(),
-        repo_tags: vec![format!("{}:{}", repo, tag)], // TODO: Merge with existing tags if ID exists?
-        parent_id: None, // Logic for parsing parent ID from config not implemented
+        repo_tags: vec![format!("{}:{}", repo, tag)], 
+        parent_id: config_json.get("parent").and_then(|v| v.as_str()).map(|s| s.to_string()),
         created: created_timestamp,
         size: total_size,
     };
