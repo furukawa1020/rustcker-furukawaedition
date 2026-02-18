@@ -47,7 +47,7 @@ impl RegistryClient {
         let resp = self.client.get(&url)
             .header(header::AUTHORIZATION, format!("Bearer {}", token))
             .header(header::ACCEPT, "application/vnd.docker.distribution.manifest.v2+json")
-            .header(header::ACCEPT, "application/vnd.docker.distribution.manifest.list.v2+json")
+
             .send()
             .await?;
 
