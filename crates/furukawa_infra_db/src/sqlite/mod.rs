@@ -63,7 +63,7 @@ impl ImageMetadataStore for SqliteStore {
         let mut final_metadata = metadata.clone();
 
         // Check if image already exists and merge tags
-        if let Some(existing) = self.get(&metadata.id).await? {
+        if let Some(existing) = ImageMetadataStore::get(self, &metadata.id).await? {
             for tag in existing.repo_tags {
                 if !final_metadata.repo_tags.contains(&tag) {
                     final_metadata.repo_tags.push(tag);
