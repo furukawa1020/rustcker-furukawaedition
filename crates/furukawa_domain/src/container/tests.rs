@@ -1,4 +1,4 @@
-#[cfg(test)]
+#![cfg(test)]
 use crate::container::{Container, Created, Running, Config};
 #[cfg(test)]
 use crate::container::runtime::ContainerRuntime;
