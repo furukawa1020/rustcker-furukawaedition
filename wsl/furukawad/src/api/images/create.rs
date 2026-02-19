@@ -31,9 +31,28 @@ pub async fn handle(
         Err(e) => return (axum::http::StatusCode::BAD_REQUEST, format!("Failed to get manifest: {}", e)).into_response(),
     };
     
-    let manifest: ManifestV2 = match serde_json::from_slice(&manifest_bytes) {
-        Ok(m) => m,
-        Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse manifest: {}", e)).into_response(),
+    // Try parsing as ManifestList first, or fallback to V2
+    let manifest: ManifestV2 = if let Ok(list) = serde_json::from_slice::<furukawa_infra_registry::manifest::ManifestList>(&manifest_bytes) {
+        tracing::info!("Received Manifest List. Searching for linux/amd64...");
+        let target_digest = list.manifests.iter().find(|m| {
+            m.platform.as_ref().map_or(false, |p| p.os == "linux" && p.architecture == "amd64")
+        }).map(|m| &m.digest);
+
+        if let Some(digest) = target_digest {
+            tracing::info!("Found linux/amd64 manifest: {}", digest);
+            let bytes = match state.registry.get_manifest(&repo, digest).await {
+                Ok(b) => b,
+                Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to fetch target manifest: {}", e)).into_response(),
+            };
+            serde_json::from_slice(&bytes).unwrap_or_else(|_| panic!("Failed to parse target manifest"))
+        } else {
+             return (axum::http::StatusCode::BAD_REQUEST, "No linux/amd64 manifest found in list".to_string()).into_response();
+        }
+    } else {
+        match serde_json::from_slice(&manifest_bytes) {
+            Ok(m) => m,
+            Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse manifest: {}", e)).into_response(),
+        }
     };
     
     // 2. Fetch Config
