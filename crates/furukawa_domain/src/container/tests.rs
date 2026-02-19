@@ -1,27 +1,21 @@
-#![cfg(test)]
-use crate::container::{Container, Created, Running, Config};
-#[cfg(test)]
-use crate::container::runtime::ContainerRuntime;
-#[cfg(test)]
+use super::{Container, Created, Running, Config};
+use super::runtime::ContainerRuntime;
 use furukawa_common::Result;
-#[cfg(test)]
 use async_trait::async_trait;
 
-#[cfg(test)]
 struct MockRuntime;
 
-#[cfg(test)]
 #[async_trait]
 impl ContainerRuntime for MockRuntime {
-        async fn start(&self, _container: &Container<Created>) -> Result<Running> {
-            Ok(Running {
-                pid: 1234,
-                started_at: time::OffsetDateTime::now_utc(),
-            })
-        }
-        async fn stop(&self, _container: &Container<Running>) -> Result<()> {
-            Ok(())
-        }
+    async fn start(&self, _container: &Container<Created>) -> Result<Running> {
+        Ok(Running {
+            pid: 1234,
+            started_at: time::OffsetDateTime::now_utc(),
+        })
+    }
+    async fn stop(&self, _container: &Container<Running>) -> Result<()> {
+        Ok(())
+    }
 }
 
 #[test]

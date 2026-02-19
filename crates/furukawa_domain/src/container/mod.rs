@@ -146,6 +146,7 @@ impl Container<Stopped> {
     }
 }
 
+#[cfg(test)]
 mod tests;
 pub mod store;
 pub mod runtime;
