@@ -44,7 +44,13 @@ pub async fn handle(
                 Ok(b) => b,
                 Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to fetch target manifest: {}", e)).into_response(),
             };
-            serde_json::from_slice(&bytes).unwrap_or_else(|_| panic!("Failed to parse target manifest"))
+            match serde_json::from_slice(&bytes) {
+                Ok(m) => m,
+                Err(e) => {
+                    tracing::error!("Failed to parse target manifest. Error: {}. Bytes: {:?}", e, String::from_utf8_lossy(&bytes));
+                    return (axum::http::StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse target manifest: {}", e)).into_response();
+                }
+            }
         } else {
              return (axum::http::StatusCode::BAD_REQUEST, "No linux/amd64 manifest found in list".to_string()).into_response();
         }
