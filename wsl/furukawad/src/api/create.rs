@@ -2,7 +2,7 @@ use axum::{extract::{Query, Json, State}, response::IntoResponse, Json as AxumJs
 use furukawa_infra_docker::v1_45::{ContainerConfig, ContainerCreateResponse};
 use serde::Deserialize;
 use tracing::info;
-use furukawa_domain::container::Container;
+use furukawa_domain::container::{Container, config::PortMapping};
 use crate::state::AppState;
 
 use uuid::Uuid;
@@ -35,9 +35,34 @@ pub async fn handle(
     // - Create filesystem layer (COW)
     
     // STRICT: Initialize pure Rust domain object
+    let mut port_mappings = Vec::new();
+    if let Some(host_config) = &body.host_config {
+        if let Some(bindings) = &host_config.port_bindings {
+            for (container_port_proto, binding_list) in bindings {
+                // container_port_proto is like "80/tcp"
+                let parts: Vec<&str> = container_port_proto.split('/').collect();
+                let container_port = parts[0].parse::<u16>().unwrap_or(0);
+                let protocol = parts.get(1).unwrap_or(&"tcp").to_string();
+
+                for binding in binding_list {
+                    if let Some(host_port_str) = &binding.host_port {
+                        if let Ok(host_port) = host_port_str.parse::<u16>() {
+                            port_mappings.push(PortMapping {
+                                container_port,
+                                host_port,
+                                protocol: protocol.clone(),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     let config = furukawa_domain::container::Config {
         image: body.image.clone(),
         cmd: body.cmd.clone().unwrap_or_default(),
+        port_mappings,
     };
     let container = Container::new(id.clone(), config);
     

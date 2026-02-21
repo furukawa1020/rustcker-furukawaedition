@@ -30,6 +30,20 @@ pub struct ContainerConfig {
     pub stop_signal: Option<String>,
     pub stop_timeout: Option<isize>,
     pub shell: Option<Vec<String>>,
+    pub host_config: Option<HostConfig>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct HostConfig {
+    pub port_bindings: Option<HashMap<String, Vec<PortBinding>>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct PortBinding {
+    pub host_ip: Option<String>,
+    pub host_port: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

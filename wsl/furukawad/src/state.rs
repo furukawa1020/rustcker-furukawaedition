@@ -3,8 +3,6 @@ use furukawa_infra_fs::store::image::ImageStore;
 use furukawa_domain::image::store::ImageMetadataStore;
 use furukawa_domain::container::store::ContainerStore;
 use furukawa_domain::container::runtime::ContainerRuntime;
-use furukawa_infra_db::SqliteStore;
-use furukawa_infra_runtime::ProcessRuntime;
 use std::sync::Arc;
 #[derive(Clone)]
 pub struct AppState {
@@ -15,20 +13,3 @@ pub struct AppState {
     pub image_metadata_store: Arc<dyn ImageMetadataStore>,
 }
 
-impl AppState {
-    pub fn new(
-        store: SqliteStore, 
-        runtime: ProcessRuntime,
-        registry: RegistryClient,
-        image_store: Arc<ImageStore>
-    ) -> Self {
-        let store = Arc::new(store);
-        Self {
-            container_store: store.clone(),
-            runtime: Arc::new(runtime),
-            registry,
-            image_store,
-            image_metadata_store: store,
-        }
-    }
-}
