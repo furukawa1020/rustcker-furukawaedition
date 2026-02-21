@@ -63,4 +63,29 @@ impl ImageStore {
         file.write_all(&data).await?;
         Ok(())
     }
+
+    /// Unpacks a layer into the target directory.
+    /// This is a blocking operation for now as 'tar' and 'flate2' are synchronous.
+    /// In a 10 year architecture, we'd use tokio-tar or spawn_blocking.
+    pub async fn unpack_layer(&self, digest: &str, target_dir: PathBuf) -> Result<(), StoreError> {
+        let layer_path = self.layer_path(digest);
+        if !layer_path.exists() {
+            return Err(StoreError::Io(std::io::Error::new(std::io::ErrorKind::NotFound, "Layer not found")));
+        }
+
+        let target_dir_clone = target_dir.clone();
+        
+        tokio::task::spawn_blocking(move || {
+            let file = std::fs::File::open(layer_path)?;
+            let decompressed = flate2::read::GzDecoder::new(file);
+            let mut archive = tar::Archive::new(decompressed);
+            
+            // Standard Docker layers often have whiteout files (.wh.)
+            // For this phase, we do a simple extraction mapping.
+            archive.unpack(target_dir_clone)?;
+            Ok::<(), std::io::Error>(())
+        }).await.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))??;
+
+        Ok(())
+    }
 }
