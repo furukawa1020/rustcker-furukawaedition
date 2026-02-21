@@ -14,6 +14,12 @@ pub struct RegistryClient {
     registry_url: String,
 }
 
+impl Default for RegistryClient {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RegistryClient {
     pub fn new() -> Self {
         let client = Client::new();
