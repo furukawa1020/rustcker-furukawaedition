@@ -20,6 +20,7 @@ impl SqliteStore {
         // We drop table for now to ensure schema match during dev phase refactor
         // In real prod, we'd use migrations
         sqlx::query("DROP TABLE IF EXISTS containers").execute(&pool).await?;
+        sqlx::query("DROP TABLE IF EXISTS images").execute(&pool).await?;
 
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS containers (
@@ -41,7 +42,8 @@ impl SqliteStore {
                 repo_tags TEXT NOT NULL,
                 parent_id TEXT,
                 created INTEGER,
-                size INTEGER
+                size INTEGER,
+                layers TEXT NOT NULL
             );"
         )
         .execute(&pool)
@@ -73,13 +75,16 @@ impl ImageMetadataStore for SqliteStore {
 
         let repo_tags_json = serde_json::to_string(&final_metadata.repo_tags)
              .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
+        let layers_json = serde_json::to_string(&final_metadata.layers)
+             .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
 
-        sqlx::query("INSERT OR REPLACE INTO images (id, repo_tags, parent_id, created, size) VALUES (?, ?, ?, ?, ?)")
+        sqlx::query("INSERT OR REPLACE INTO images (id, repo_tags, parent_id, created, size, layers) VALUES (?, ?, ?, ?, ?, ?)")
             .bind(&final_metadata.id)
             .bind(repo_tags_json)
             .bind(&final_metadata.parent_id)
             .bind(final_metadata.created)
             .bind(final_metadata.size)
+            .bind(layers_json)
             .execute(&self.pool)
             .await
             .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
@@ -87,7 +92,7 @@ impl ImageMetadataStore for SqliteStore {
     }
 
     async fn list(&self) -> Result<Vec<ImageMetadata>> {
-        let rows = sqlx::query("SELECT id, repo_tags, parent_id, created, size FROM images")
+        let rows = sqlx::query("SELECT id, repo_tags, parent_id, created, size, layers FROM images")
             .fetch_all(&self.pool)
             .await
             .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
@@ -99,8 +104,11 @@ impl ImageMetadataStore for SqliteStore {
             let parent_id: Option<String> = row.get("parent_id");
             let created: i64 = row.get("created");
             let size: i64 = row.get("size");
+            let layers_str: String = row.get("layers");
 
             let repo_tags: Vec<String> = serde_json::from_str(&repo_tags_str)
+                .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
+            let layers: Vec<String> = serde_json::from_str(&layers_str)
                 .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
 
             images.push(ImageMetadata {
@@ -109,13 +117,14 @@ impl ImageMetadataStore for SqliteStore {
                 parent_id,
                 created,
                 size,
+                layers,
             });
         }
         Ok(images)
     }
 
     async fn get(&self, id: &str) -> Result<Option<ImageMetadata>> {
-        let row = sqlx::query("SELECT id, repo_tags, parent_id, created, size FROM images WHERE id = ?")
+        let row = sqlx::query("SELECT id, repo_tags, parent_id, created, size, layers FROM images WHERE id = ?")
             .bind(id)
             .fetch_optional(&self.pool)
             .await
@@ -128,8 +137,11 @@ impl ImageMetadataStore for SqliteStore {
                 let parent_id: Option<String> = row.get("parent_id");
                 let created: i64 = row.get("created");
                 let size: i64 = row.get("size");
+                let layers_str: String = row.get("layers");
 
                 let repo_tags: Vec<String> = serde_json::from_str(&repo_tags_str)
+                    .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
+                let layers: Vec<String> = serde_json::from_str(&layers_str)
                     .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
 
                 Ok(Some(ImageMetadata {
@@ -138,6 +150,7 @@ impl ImageMetadataStore for SqliteStore {
                     parent_id,
                     created,
                     size,
+                    layers,
                 }))
             },
             None => Ok(None)

@@ -102,7 +102,8 @@ pub async fn handle(
         &repo,
         tag,
         &config_json,
-        total_size
+        total_size,
+        manifest.layers.iter().map(|l| l.digest.clone()).collect()
     );
     
     if let Err(e) = state.image_metadata_store.save(&metadata).await {
@@ -120,6 +121,7 @@ fn create_image_metadata(
     tag: &str,
     config_json: &serde_json::Value,
     total_size: i64,
+    layers: Vec<String>,
 ) -> ImageMetadata {
     // Extract 'created' from config if possible
     let created_str = config_json.get("created").and_then(|v| v.as_str()).unwrap_or("");
@@ -134,6 +136,7 @@ fn create_image_metadata(
         parent_id: config_json.get("parent").and_then(|v| v.as_str()).map(|s| s.to_string()),
         created: created_timestamp,
         size: total_size,
+        layers,
     }
 }
 
@@ -149,7 +152,7 @@ mod tests {
             "parent": "sha256:parent123"
         });
         
-        let meta = create_image_metadata("id123", "lib/repo", "latest", &config, 1000);
+        let meta = create_image_metadata("id123", "lib/repo", "latest", &config, 1000, vec!["layer1".to_string()]);
         
         assert_eq!(meta.id, "id123");
         assert_eq!(meta.repo_tags, vec!["lib/repo:latest"]);
@@ -164,7 +167,7 @@ mod tests {
             "created": "2023-01-01T00:00:00Z"
         });
         
-        let meta = create_image_metadata("id123", "lib/repo", "latest", &config, 1000);
+        let meta = create_image_metadata("id123", "lib/repo", "latest", &config, 1000, vec![]);
         
         assert_eq!(meta.parent_id, None);
     }
