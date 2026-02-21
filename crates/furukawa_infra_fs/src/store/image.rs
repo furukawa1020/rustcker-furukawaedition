@@ -140,7 +140,6 @@ impl ImageStore {
 mod tests {
     use super::*;
     use tempfile::TempDir;
-    use std::io::Write;
     use flate2::write::GzEncoder;
     use flate2::Compression;
 

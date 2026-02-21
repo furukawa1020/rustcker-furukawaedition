@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 furukawa_domain = { path = "../furukawa_domain" }
 furukawa_common = { path = "../furukawa_common" }
-tokio = { version = "1.36", features = ["fs"] }
+tokio = { version = "1.36", features = ["fs", "io-util", "macros", "rt-multi-thread"] }
 tracing = "0.1"
 thiserror = "1.0"
 sha2 = "0.10"
