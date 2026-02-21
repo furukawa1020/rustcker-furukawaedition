@@ -88,4 +88,50 @@ impl ImageStore {
 
         Ok(())
     }
+
+    pub async fn compose_rootfs(&self, layers: &[String], target_dir: PathBuf) -> Result<(), StoreError> {
+        if !target_dir.exists() {
+            fs::create_dir_all(&target_dir).await?;
+        }
+
+        for digest in layers {
+            tracing::info!("Unpacking layer: {}", digest);
+            self.unpack_layer(digest, target_dir.clone()).await?;
+        }
+
+        // Basic Whiteout Handling:
+        // After unpacking all layers, we should scan for .wh. files.
+        // In a real 10-year foundation, we'd handle this during untarring.
+        // For Phase 5, we do a post-extraction cleanup to satisfy the "Compose RootFS" objective.
+        let target_dir_clone = target_dir.clone();
+        tokio::task::spawn_blocking(move || {
+            for entry in walkdir::WalkDir::new(&target_dir_clone)
+                .into_iter()
+                .filter_map(|e| e.ok()) {
+                let path = entry.path();
+                if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
+                    if file_name.starts_with(".wh.") {
+                        // This is a whiteout file.
+                        // For .wh.<file>, we delete both the whiteout AND the target file.
+                        // For .wh..wh..opq, it's more complex (opaque dir), 
+                        // but for now we just handle the file hiding.
+                        let target_file_name = file_name.strip_prefix(".wh.").unwrap();
+                        let target_path = path.parent().unwrap().join(target_file_name);
+                        
+                        if target_path.exists() {
+                            if target_path.is_dir() {
+                                std::fs::remove_dir_all(&target_path)?;
+                            } else {
+                                std::fs::remove_file(&target_path)?;
+                            }
+                        }
+                        std::fs::remove_file(path)?; // Remove the whiteout marker itself
+                    }
+                }
+            }
+            Ok::<(), std::io::Error>(())
+        }).await.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))??;
+
+        Ok(())
+    }
 }
