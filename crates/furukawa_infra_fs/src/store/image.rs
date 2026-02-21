@@ -135,3 +135,64 @@ impl ImageStore {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+    use std::io::Write;
+    use flate2::write::GzEncoder;
+    use flate2::Compression;
+
+    fn create_test_layer(files: Vec<(&str, &str)>) -> Vec<u8> {
+        let buf = Vec::new();
+        let enc = GzEncoder::new(buf, Compression::default());
+        let mut tar = tar::Builder::new(enc);
+
+        for (name, content) in files {
+            let mut header = tar::Header::new_gnu();
+            header.set_size(content.len() as u64);
+            header.set_path(name).unwrap();
+            header.set_cksum();
+            tar.append(&header, content.as_bytes()).unwrap();
+        }
+
+        tar.finish().unwrap();
+        tar.into_inner().unwrap().finish().unwrap()
+    }
+
+    #[tokio::test]
+    async fn test_compose_rootfs_with_whiteouts() {
+        let tmp = TempDir::new().unwrap();
+        let store = ImageStore::new(tmp.path().to_path_buf());
+        store.ensure_dirs().await.unwrap();
+
+        // Layer 1: Base files
+        let layer1_data = create_test_layer(vec![
+            ("etc/config", "base-config"),
+            ("usr/bin/app", "binary-v1"),
+        ]);
+        let digest1 = "sha256:layer1";
+        store.save_layer(digest1, Bytes::from(layer1_data)).await.unwrap();
+
+        // Layer 2: Update app and whiteout config
+        // In Docker, to whiteout "etc/config", we add "etc/.wh.config"
+        let layer2_data = create_test_layer(vec![
+            ("usr/bin/app", "binary-v2"),
+            ("etc/.wh.config", ""),
+        ]);
+        let digest2 = "sha256:layer2";
+        store.save_layer(digest2, Bytes::from(layer2_data)).await.unwrap();
+
+        let target_dir = tmp.path().join("rootfs");
+        store.compose_rootfs(&[digest1.to_string(), digest2.to_string()], target_dir.clone()).await.unwrap();
+
+        // Verify outcomes
+        assert!(target_dir.join("usr/bin/app").exists());
+        let app_content = std::fs::read_to_string(target_dir.join("usr/bin/app")).unwrap();
+        assert_eq!(app_content, "binary-v2");
+
+        assert!(!target_dir.join("etc/config").exists());
+        assert!(!target_dir.join("etc/.wh.config").exists());
+    }
+}
