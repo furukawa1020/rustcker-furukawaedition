@@ -9,6 +9,7 @@ pub struct ImageMetadata {
     pub parent_id: Option<String>,
     pub created: i64, // Unix timestamp
     pub size: i64,
+    pub layers: Vec<String>,
 }
 
 #[async_trait]
