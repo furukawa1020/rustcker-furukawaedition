@@ -10,14 +10,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
         { id: 'dashboard', label: 'Dashboard', icon: '📊' },
         { id: 'containers', label: 'Containers', icon: '📦' },
         { id: 'images', label: 'Images', icon: '💿' },
-        { id: 'volumes', label: 'Volumes', icon: '💾' },
-        { id: 'settings', label: 'Settings', icon: '⚙️' },
+        { id: 'networks', label: 'Networks', icon: '🌐' },
+        { id: 'compose', label: 'Compose', icon: '🎼' },
+        { id: 'build', label: 'Build', icon: '🔨' },
     ];
 
     return (
         <div className="sidebar">
             <div className="logo">
-                <h2>Furukawa</h2>
+                <h2>HATAKE</h2>
                 <span>Desktop</span>
             </div>
             <nav>
@@ -32,7 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
                     </button>
                 ))}
             </nav>
-            <div className="version-tag">v0.1.0</div>
+            <div className="version-tag">v0.1.0 · Phase 6</div>
         </div>
     );
 };
