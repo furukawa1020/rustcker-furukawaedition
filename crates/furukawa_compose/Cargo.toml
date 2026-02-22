@@ -9,6 +9,7 @@ anyhow = "1"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
+serde_json = "1"
 furukawa_domain = { path = "../../crates/furukawa_domain" }
 furukawa_infra_docker = { path = "../../crates/furukawa_infra_docker" }
 reqwest = { version = "0.12", features = ["json"] }

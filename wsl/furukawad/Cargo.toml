@@ -11,6 +11,9 @@ furukawa_infra_fs = { path = "../../crates/furukawa_infra_fs" }
 furukawa_infra_db = { path = "../../crates/furukawa_infra_db" }
 furukawa_infra_runtime = { path = "../../crates/furukawa_infra_runtime" }
 furukawa_infra_registry = { path = "../../crates/furukawa_infra_registry" }
+furukawa_infra_wsl = { path = "../../crates/furukawa_infra_wsl" }
+furukawa_build = { path = "../../crates/furukawa_build" }
+furukawa_compose = { path = "../../crates/furukawa_compose" }
 
 tokio = { version = "1.36", features = ["full"] }
 axum = { version = "0.7", features = ["macros"] }
@@ -21,6 +24,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 clap = { version = "4.4", features = ["derive", "env"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-anyhow = "1.0" # Only allowed in binary main
+anyhow = "1.0"
 uuid = { version = "1.0", features = ["v4", "fast-rng"] }
 time = { version = "0.3", features = ["parsing"] }
+flate2 = "1"
+tar = "0.4"

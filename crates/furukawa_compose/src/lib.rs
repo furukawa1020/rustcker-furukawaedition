@@ -4,6 +4,7 @@
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
 use tracing::info;
 
@@ -166,7 +167,7 @@ pub async fn compose_up(
         info!("[COMPOSE] Starting service '{}' from image '{}'", service_name, image);
 
         // Build port bindings
-        let mut port_bindings = serde_json::Map::new();
+        let mut port_bindings = serde_json::Map::<String, Value>::new();
         for port_spec in &service.ports {
             // "8080:80" or "80"
             let (host_port, container_port) = if let Some((h, c)) = port_spec.split_once(':') {
@@ -204,7 +205,7 @@ pub async fn compose_up(
             .context("Failed to create container")?;
 
         let container_id = create_resp.json::<serde_json::Value>().await?
-            .get("Id").and_then(|v| v.as_str())
+            .get("Id").and_then(|v: &serde_json::Value| v.as_str())
             .context("Missing container ID in response")?
             .to_string();
 
@@ -243,8 +244,8 @@ pub async fn compose_down(
             .await?;
 
         for c in &list_resp {
-            let names = c.get("Names").and_then(|n| n.as_array());
-            let id = c.get("Id").and_then(|v| v.as_str()).unwrap_or("");
+            let names = c.get("Names").and_then(|n: &serde_json::Value| n.as_array());
+            let id = c.get("Id").and_then(|v: &serde_json::Value| v.as_str()).unwrap_or("");
             if let Some(names) = names {
                 if names.iter().any(|n| n.as_str().unwrap_or("").contains(&container_name)) {
                     let _ = client.post(&format!("{}/containers/{}/stop", api_base, id)).send().await;
