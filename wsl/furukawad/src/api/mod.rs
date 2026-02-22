@@ -12,6 +12,7 @@ pub mod middleware;
 pub mod networks;
 pub mod build;
 pub mod compose;
+pub mod volumes;
 
 use axum::{routing::{get, post, delete as axum_delete}, Router};
 use crate::state::AppState;
@@ -37,6 +38,11 @@ pub fn router(state: AppState) -> Router {
         .route("/networks/create", post(networks::create))
         .route("/networks/:id", get(networks::inspect))
         .route("/networks/:id", axum_delete(networks::delete))
+        // Volumes
+        .route("/volumes", get(volumes::list))
+        .route("/volumes/create", post(volumes::create))
+        .route("/volumes/prune", axum_delete(volumes::prune))
+        .route("/volumes/:name", axum_delete(volumes::delete))
         // Build
         .route("/build", post(build::handle))
         // Compose

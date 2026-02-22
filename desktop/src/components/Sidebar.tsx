@@ -11,6 +11,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
         { id: 'containers', label: 'Containers', icon: '📦' },
         { id: 'images', label: 'Images', icon: '💿' },
         { id: 'networks', label: 'Networks', icon: '🌐' },
+        { id: 'volumes', label: 'Volumes', icon: '💾' },
         { id: 'compose', label: 'Compose', icon: '🎼' },
         { id: 'build', label: 'Build', icon: '🔨' },
     ];

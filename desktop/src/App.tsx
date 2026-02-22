@@ -5,6 +5,7 @@ import { Dashboard } from './components/Dashboard';
 import { ContainerList } from './components/ContainerList';
 import { ImageList } from './components/ImageList';
 import { NetworkList } from './components/NetworkList';
+import { VolumePanel } from './components/VolumePanel';
 import { ComposePanel } from './components/ComposePanel';
 import { BuildPanel } from './components/BuildPanel';
 
@@ -19,6 +20,7 @@ function App() {
         {activeTab === 'containers' && <ContainerList />}
         {activeTab === 'images' && <ImageList />}
         {activeTab === 'networks' && <NetworkList />}
+        {activeTab === 'volumes' && <VolumePanel />}
         {activeTab === 'compose' && <ComposePanel />}
         {activeTab === 'build' && <BuildPanel />}
       </main>
