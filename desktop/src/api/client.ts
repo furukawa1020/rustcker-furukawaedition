@@ -1,4 +1,4 @@
-export const API_BASE = "http://localhost:2375";
+export const API_BASE = "http://127.0.0.1:2375";
 
 export interface Version {
     Platform: { Name: string };
