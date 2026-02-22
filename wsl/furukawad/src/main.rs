@@ -18,13 +18,25 @@ async fn main() -> anyhow::Result<()> {
     // ── Phase 6A: WSL Distro Auto-Setup ────────────────────────────────────
     let distro_name = std::env::var("FURUKAWA_DISTRO")
         .unwrap_or_else(|_| "furukawa-alpine".to_string());
-    let wsl_manager = furukawa_infra_wsl::WslManager::new(
-        distro_name.clone(),
-        data_dir.join("wsl"),
-    );
     
-    if let Err(e) = wsl_manager.ensure_distro().await {
-        tracing::warn!("WSL distro setup failed (non-fatal): {}. Falling back to Ubuntu.", e);
+    let skip_wsl_setup = std::env::var("FURUKAWA_SKIP_WSL_SETUP").is_ok();
+    if !skip_wsl_setup {
+        let wsl_manager = furukawa_infra_wsl::WslManager::new(
+            distro_name.clone(),
+            data_dir.join("wsl"),
+        );
+        // Run distro setup with a 30-second timeout so slow WSL operations don't block startup
+        let setup_result = tokio::time::timeout(
+            std::time::Duration::from_secs(30),
+            wsl_manager.ensure_distro(),
+        ).await;
+        match setup_result {
+            Ok(Ok(())) => info!("WSL distro setup complete."),
+            Ok(Err(e)) => tracing::warn!("WSL distro setup failed (non-fatal): {}", e),
+            Err(_) => tracing::warn!("WSL distro setup timed out (non-fatal). Engine will continue."),
+        }
+    } else {
+        info!("FURUKAWA_SKIP_WSL_SETUP set — skipping WSL distro auto-setup.");
     }
 
     // ── Database ─────────────────────────────────────────────────────────────
