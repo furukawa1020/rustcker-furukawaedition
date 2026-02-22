@@ -17,20 +17,32 @@ async fn main() -> anyhow::Result<()> {
     
     // Initialize Persistence
     // In production, this path comes from config
-    let db_url = "sqlite://furukawa.db?mode=rwc"; 
-    let sqlite_store = furukawa_infra_db::SqliteStore::new(db_url).await.unwrap();
+    // Resolve data directory from env var (set by Tauri sidecar) or fallback to cwd
+    let data_dir = std::env::var("FURUKAWA_DATA_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|_| std::path::PathBuf::from("."));
+    
+    // Ensure the data directory exists
+    std::fs::create_dir_all(&data_dir).unwrap();
+
+    let db_path = data_dir.join("furukawa.db");
+    let db_url = format!("sqlite://{}?mode=rwc", db_path.to_string_lossy().replace("\\", "/"));
+    
+    info!("Using database at: {}", db_url);
+    let sqlite_store = furukawa_infra_db::SqliteStore::new(&db_url).await.unwrap();
     let store = std::sync::Arc::new(sqlite_store);
     
     let registry = furukawa_infra_registry::RegistryClient::new();
+    let furukawa_data = data_dir.join("furukawa_data");
     let image_store = std::sync::Arc::new(furukawa_infra_fs::store::image::ImageStore::new(
-        std::path::PathBuf::from("furukawa_data")
+        furukawa_data.clone()
     ));
     image_store.ensure_dirs().await.unwrap();
 
     let runtime = furukawa_infra_runtime::WslRuntime {
         image_store: image_store.clone(),
         metadata_store: store.clone(),
-        containers_root: std::path::PathBuf::from("furukawa_data/containers"),
+        containers_root: furukawa_data.join("containers"),
         distro: "Ubuntu".to_string(), // Default for Phase 5 prototype
     };
 
