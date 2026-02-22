@@ -16,11 +16,10 @@ impl SqliteStore {
             .connect(database_url)
             .await?;
 
-        // Initialize schema (Strict strictness)
-        // We drop table for now to ensure schema match during dev phase refactor
-        // In real prod, we'd use migrations
+        // Initialize schema (drop tables for dev-phase refactors; use migrations in prod)
         sqlx::query("DROP TABLE IF EXISTS containers").execute(&pool).await?;
         sqlx::query("DROP TABLE IF EXISTS images").execute(&pool).await?;
+        // Note: we do NOT drop networks on startup so custom networks persist.
 
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS containers (
@@ -33,8 +32,6 @@ impl SqliteStore {
         )
         .execute(&pool)
         .await?;
-        
-// ... (Existing code) ...
 
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS images (
@@ -44,6 +41,17 @@ impl SqliteStore {
                 created INTEGER,
                 size INTEGER,
                 layers TEXT NOT NULL
+            );"
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS networks (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                driver TEXT NOT NULL DEFAULT 'bridge',
+                labels JSON NOT NULL DEFAULT '{}'
             );"
         )
         .execute(&pool)
@@ -449,5 +457,83 @@ impl furukawa_common::diagnostic::Diagnosable for SerializationError {
     }
     fn suggestion(&self) -> Option<String> {
         Some("Check data integrity".to_string())
+    }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// NetworkStore Implementation
+// ────────────────────────────────────────────────────────────────────────────
+
+use furukawa_domain::network::{NetworkStore, NetworkRecord};
+
+#[async_trait]
+impl NetworkStore for SqliteStore {
+    async fn save(&self, network: &NetworkRecord) -> Result<()> {
+        let labels_json = serde_json::to_string(&network.labels)
+            .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
+        sqlx::query(
+            "INSERT OR REPLACE INTO networks (id, name, driver, labels) VALUES (?, ?, ?, ?)"
+        )
+        .bind(&network.id)
+        .bind(&network.name)
+        .bind(&network.driver)
+        .bind(labels_json)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
+        Ok(())
+    }
+
+    async fn list(&self) -> Result<Vec<NetworkRecord>> {
+        let rows = sqlx::query("SELECT id, name, driver, labels FROM networks")
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
+
+        let mut result = Vec::new();
+        for row in rows {
+            let labels_str: String = row.get("labels");
+            let labels = serde_json::from_str(&labels_str)
+                .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
+            result.push(NetworkRecord {
+                id: row.get("id"),
+                name: row.get("name"),
+                driver: row.get("driver"),
+                labels,
+            });
+        }
+        Ok(result)
+    }
+
+    async fn get(&self, id: &str) -> Result<Option<NetworkRecord>> {
+        let row = sqlx::query("SELECT id, name, driver, labels FROM networks WHERE id = ?")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
+
+        match row {
+            Some(row) => {
+                let labels_str: String = row.get("labels");
+                let labels = serde_json::from_str(&labels_str)
+                    .map_err(|e| furukawa_common::diagnostic::Error::new(SerializationError(e)))?;
+                Ok(Some(NetworkRecord {
+                    id: row.get("id"),
+                    name: row.get("name"),
+                    driver: row.get("driver"),
+                    labels,
+                }))
+            }
+            None => Ok(None),
+        }
+    }
+
+    async fn delete(&self, id: &str) -> Result<()> {
+        sqlx::query("DELETE FROM networks WHERE id = ?")
+            .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
+        Ok(())
     }
 }
