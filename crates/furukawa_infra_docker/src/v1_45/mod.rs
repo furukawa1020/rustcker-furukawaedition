@@ -37,6 +37,10 @@ pub struct ContainerConfig {
 #[serde(rename_all = "PascalCase")]
 pub struct HostConfig {
     pub port_bindings: Option<HashMap<String, Vec<PortBinding>>>,
+    /// Volume bind mounts: e.g. ["C:\\data:/data", "C:\\logs:/logs:ro"]
+    pub binds: Option<Vec<String>>,
+    /// Network mode: "bridge", "host", "none", or custom network name
+    pub network_mode: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
