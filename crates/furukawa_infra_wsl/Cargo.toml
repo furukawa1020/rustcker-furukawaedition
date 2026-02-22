@@ -1,0 +1,9 @@
+[package]
+name = "furukawa_infra_wsl"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tracing = "0.1"
+anyhow = "1"
+tokio = { version = "1", features = ["process", "fs"] }
