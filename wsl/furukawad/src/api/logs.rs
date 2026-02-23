@@ -24,11 +24,23 @@ pub async fn handle(
     // 3. Read file
     match File::open(&log_path).await {
         Ok(mut file) => {
-            let mut contents = String::new();
-            if let Err(e) = file.read_to_string(&mut contents).await {
+            let mut bytes = Vec::new();
+            if let Err(e) = file.read_to_end(&mut bytes).await {
                 error!("Failed to read log file: {}", e);
                 return StatusCode::INTERNAL_SERVER_ERROR.into_response();
             }
+
+            let contents = if bytes.starts_with(&[0xff, 0xfe]) {
+                // UTF-16 LE
+                let u16_data: Vec<u16> = bytes[2..]
+                    .chunks_exact(2)
+                    .map(|c| u16::from_le_bytes([c[0], c[1]]))
+                    .collect();
+                String::from_utf16_lossy(&u16_data)
+            } else {
+                String::from_utf8_lossy(&bytes).into_owned()
+            };
+
             (StatusCode::OK, contents).into_response()
         },
         Err(e) => {
