@@ -101,7 +101,22 @@ impl ImageStore {
                 }
             }
 
-            // Pass 2: Post-process symlinks by copying the target file
+            // A helper to recursively copy directories for the fallback
+            fn copy_dir_all(src: impl AsRef<std::path::Path>, dst: impl AsRef<std::path::Path>) -> std::io::Result<()> {
+                let _ = std::fs::create_dir_all(&dst);
+                for entry in std::fs::read_dir(src)? {
+                    let entry = entry?;
+                    let ty = entry.file_type()?;
+                    if ty.is_dir() {
+                        copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()))?;
+                    } else {
+                        let _ = std::fs::copy(entry.path(), dst.as_ref().join(entry.file_name()));
+                    }
+                }
+                Ok(())
+            }
+
+            // Pass 2: Post-process symlinks by copying the target file or directory
             // Note: This is a Windows fallback because standard users cannot create symlinks.
             for (path, link_name, is_sym) in deferred_links {
                 let absolute_path = target_dir_clone.join(&path);
@@ -119,10 +134,16 @@ impl ImageStore {
                     let _ = std::fs::create_dir_all(parent);
                 }
 
-                // Attempt to copy the file. If it fails (e.g. target is a dir or not found), log it.
-                if resolved_target.exists() && resolved_target.is_file() {
-                    if let Err(e) = std::fs::copy(&resolved_target, &absolute_path) {
-                        tracing::warn!("Fallback copy failed for {:?} -> {:?}: {}", path, link_name, e);
+                // Attempt to copy the file or directory.
+                if resolved_target.exists() {
+                    if resolved_target.is_file() {
+                        if let Err(e) = std::fs::copy(&resolved_target, &absolute_path) {
+                            tracing::warn!("Fallback file copy failed for {:?} -> {:?}: {}", path, link_name, e);
+                        }
+                    } else if resolved_target.is_dir() {
+                        if let Err(e) = copy_dir_all(&resolved_target, &absolute_path) {
+                            tracing::warn!("Fallback dir copy failed for {:?} -> {:?}: {}", path, link_name, e);
+                        }
                     }
                 }
             }
