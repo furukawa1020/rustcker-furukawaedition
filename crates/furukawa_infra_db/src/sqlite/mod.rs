@@ -16,9 +16,7 @@ impl SqliteStore {
             .connect(database_url)
             .await?;
 
-        // Initialize schema (drop tables for dev-phase refactors; use migrations in prod)
-        sqlx::query("DROP TABLE IF EXISTS containers").execute(&pool).await?;
-        sqlx::query("DROP TABLE IF EXISTS images").execute(&pool).await?;
+        // Initialize schema (use migrations in prod)
         // Note: we do NOT drop networks on startup so custom networks persist.
 
         sqlx::query(
