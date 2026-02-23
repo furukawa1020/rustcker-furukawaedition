@@ -15,7 +15,7 @@ furukawa_infra_wsl = { path = "../../crates/furukawa_infra_wsl" }
 furukawa_build = { path = "../../crates/furukawa_build" }
 furukawa_compose = { path = "../../crates/furukawa_compose" }
 
-tokio = { version = "1.36", features = ["full"] }
+tokio = { version = "1.36", features = ["full", "rt-multi-thread"] }
 axum = { version = "0.7", features = ["macros"] }
 tower = { version = "0.4", features = ["util", "timeout", "load-shed", "limit"] }
 tower-http = { version = "0.5", features = ["trace", "compression-full", "cors"] }
