@@ -80,9 +80,53 @@ impl ImageStore {
             let decompressed = flate2::read::GzDecoder::new(file);
             let mut archive = tar::Archive::new(decompressed);
             
-            // Standard Docker layers often have whiteout files (.wh.)
-            // For this phase, we do a simple extraction mapping.
-            archive.unpack(target_dir_clone)?;
+            let mut deferred_links = Vec::new();
+
+            for entry in archive.entries()? {
+                let mut entry = entry?;
+                let etype = entry.header().entry_type();
+                
+                if etype == tar::EntryType::Symlink || etype == tar::EntryType::Link {
+                    if let Ok(Some(link_name)) = entry.link_name() {
+                        if let Ok(path) = entry.path() {
+                            deferred_links.push((path.to_path_buf(), link_name.into_owned(), etype == tar::EntryType::Symlink));
+                        }
+                    }
+                    continue; // Skip creating the symlink normally
+                }
+                
+                // Normal unpack for files/dirs
+                if let Err(e) = entry.unpack_in(&target_dir_clone) {
+                    tracing::warn!("Failed to unpack entry {:?}: {}", entry.path().unwrap_or_default(), e);
+                }
+            }
+
+            // Pass 2: Post-process symlinks by copying the target file
+            // Note: This is a Windows fallback because standard users cannot create symlinks.
+            for (path, link_name, is_sym) in deferred_links {
+                let absolute_path = target_dir_clone.join(&path);
+                
+                let resolved_target = if is_sym && !link_name.is_absolute() {
+                    // Relative symlink
+                    absolute_path.parent().unwrap_or(&target_dir_clone).join(&link_name)
+                } else {
+                    // Absolute symlink or Hardlink
+                    let rel = link_name.strip_prefix("/").unwrap_or(&link_name);
+                    target_dir_clone.join(rel)
+                };
+
+                if let Some(parent) = absolute_path.parent() {
+                    let _ = std::fs::create_dir_all(parent);
+                }
+
+                // Attempt to copy the file. If it fails (e.g. target is a dir or not found), log it.
+                if resolved_target.exists() && resolved_target.is_file() {
+                    if let Err(e) = std::fs::copy(&resolved_target, &absolute_path) {
+                        tracing::warn!("Fallback copy failed for {:?} -> {:?}: {}", path, link_name, e);
+                    }
+                }
+            }
+            
             Ok::<(), std::io::Error>(())
         }).await.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))??;
 
