@@ -18,15 +18,15 @@ pub fn run() {
         )?;
       }
 
-      // Determine the data directory for furukawad
+      // Determine the data directory for rustkerd
       let app_data_dir = app.path().app_data_dir()
         .expect("Failed to resolve app data dir");
       
-      // Spawn the sidecar (furukawad) with the data directory as env var
+      // Spawn the sidecar (rustkerd) with the data directory as env var
       let sidecar_command = app.shell()
-        .sidecar("furukawad")
+        .sidecar("rustkerd")
         .map_err(|e| e.to_string())?
-        .env("FURUKAWA_DATA_DIR", app_data_dir.to_string_lossy().as_ref());
+        .env("RUSTKER_DATA_DIR", app_data_dir.to_string_lossy().as_ref());
       
       let (mut rx, child) = sidecar_command.spawn().map_err(|e| e.to_string())?;
 
@@ -37,14 +37,14 @@ pub fn run() {
               match event {
                   CommandEvent::Stdout(line_bytes) => {
                       let line = String::from_utf8_lossy(&line_bytes);
-                      log::info!("[furukawad stdout] {}", line);
+                      log::info!("[rustkerd stdout] {}", line);
                   }
                   CommandEvent::Stderr(line_bytes) => {
                       let line = String::from_utf8_lossy(&line_bytes);
-                      log::error!("[furukawad stderr] {}", line);
+                      log::error!("[rustkerd stderr] {}", line);
                   }
                   CommandEvent::Terminated(payload) => {
-                      log::error!("[furukawad] terminated with code: {:?}", payload.code);
+                      log::error!("[rustkerd] terminated with code: {:?}", payload.code);
                       // Optionally show a dialog here
                       break;
                   }

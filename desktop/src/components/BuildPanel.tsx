@@ -5,7 +5,7 @@ const API = 'http://127.0.0.1:2375';
 const DEFAULT_DOCKERFILE = `FROM alpine:latest
 WORKDIR /app
 COPY . .
-RUN echo "Building with HATAKE Desktop Engine"
+RUN echo "Building with Rustker Desktop Engine"
 CMD ["sh", "-c", "echo Hello from built image"]
 `;
 
@@ -30,7 +30,7 @@ export const BuildPanel: React.FC = () => {
             // Create a minimal tar containing the Dockerfile
             // We POST the Dockerfile content as text/plain body and the server wraps it
             // (For real docker build, client creates a tar archive)
-            // In our demo we send an empty body — the server returns "Dockerfile not found"
+            // In our demo we send an empty body  Ethe server returns "Dockerfile not found"
             // Instead, we call a dedicated endpoint that accepts raw dockerfile text
             appendLog('Sending Dockerfile to engine…');
 
@@ -50,19 +50,19 @@ export const BuildPanel: React.FC = () => {
                 const lines = dockerfile.split('\n').filter(l => l.trim() && !l.startsWith('#'));
                 for (const line of lines) {
                     await new Promise(r => setTimeout(r, 150));
-                    appendLog(`  → ${line.trim()}`);
+                    appendLog(`  ↁE${line.trim()}`);
                 }
 
-                appendLog(`\n✓ Build simulation complete: ${tag}`);
+                appendLog(`\n✁EBuild simulation complete: ${tag}`);
                 appendLog(`  (Full WSL2-backed build runs when Dockerfile is sent as tar archive)`);
                 setSuccess(true);
             } else {
-                appendLog(`✓ ${data.stream || 'Build successful'}`);
+                appendLog(`✁E${data.stream || 'Build successful'}`);
                 setSuccess(true);
             }
         } catch (e: any) {
             setError(e.message);
-            appendLog(`✗ Error: ${e.message}`);
+            appendLog(`✁EError: ${e.message}`);
             setSuccess(false);
         } finally {
             setBuilding(false);
@@ -108,8 +108,8 @@ export const BuildPanel: React.FC = () => {
                 <div className="build-log-section">
                     <div className="section-title">
                         Build Output
-                        {success === true && <span className="badge badge-success">✓ Done</span>}
-                        {success === false && <span className="badge badge-error">✗ Failed</span>}
+                        {success === true && <span className="badge badge-success">✁EDone</span>}
+                        {success === false && <span className="badge badge-error">✁EFailed</span>}
                     </div>
                     {error && <div className="error-state">⚠ {error}</div>}
                     <pre className="build-log">

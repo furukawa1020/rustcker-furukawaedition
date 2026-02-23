@@ -1,12 +1,12 @@
-//! WSL2 distribution management for HATAKE Desktop.
+//! WSL2 distribution management for Rustker Desktop.
 //! Ensures a lightweight Alpine-based distro is available for container execution.
 
 use anyhow::{Context, Result};
 use tracing::{info, warn};
 
-/// Manages WSL2 distributions for HATAKE Desktop.
+/// Manages WSL2 distributions for Rustker Desktop.
 pub struct WslManager {
-    /// Name of the managed distro (e.g. "furukawa-alpine")
+    /// Name of the managed distro (e.g. "rustker-alpine")
     pub distro_name: String,
     /// Directory where the distro rootfs is stored
     pub install_dir: std::path::PathBuf,

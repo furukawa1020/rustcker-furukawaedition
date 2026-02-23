@@ -66,7 +66,7 @@ pub async fn handle(
     };
 
     // Get WSL distro from state (via runtime downcast approximation)
-    let distro = "furukawa-alpine"; // fallback; ideally read from config
+    let distro = "rustker-alpine"; // fallback; ideally read from config
     let output_dir = std::path::Path::new("furukawa_build_out");
 
     let build_ctx = match furukawa_build::BuildContext::new(

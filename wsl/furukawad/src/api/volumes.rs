@@ -10,8 +10,8 @@ use tracing::info;
 use crate::state::AppState;
 
 fn volumes_root() -> PathBuf {
-    let data = std::env::var("FURUKAWA_DATA_DIR").unwrap_or_else(|_| ".".into());
-    PathBuf::from(data).join("furukawa_data").join("volumes")
+    let data = std::env::var("RUSTKER_DATA_DIR").unwrap_or_else(|_| ".".into());
+    PathBuf::from(data).join("rustker_data").join("volumes")
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -113,7 +113,7 @@ pub async fn delete(
     }
 }
 
-/// DELETE /volumes/prune — remove all unused volumes
+/// DELETE /volumes/prune  Eremove all unused volumes
 pub async fn prune(State(_state): State<AppState>) -> impl IntoResponse {
     let root = volumes_root();
     let mut pruned = Vec::new();

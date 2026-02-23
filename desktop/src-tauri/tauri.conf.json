@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "furukawa-desktop",
+  "productName": "rustker-desktop",
   "version": "0.1.0",
-  "identifier": "com.furukawa.desktop",
+  "identifier": "com.rustker.desktop",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Furukawa Desktop",
+        "title": "Rustker Desktop",
         "width": 1024,
         "height": 768,
         "resizable": true,
@@ -26,7 +26,7 @@
   "bundle": {
     "active": true,
     "externalBin": [
-      "binaries/furukawad"
+      "binaries/rustkerd"
     ],
     "icon": [
       "icons/32x32.png",

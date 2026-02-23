@@ -19,7 +19,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
     return (
         <div className="sidebar">
             <div className="logo">
-                <h2>HATAKE</h2>
+                <h2>Rustker</h2>
                 <span>Desktop</span>
             </div>
             <nav>
