@@ -132,13 +132,21 @@ impl ImageMetadataStore for SqliteStore {
     }
 
     async fn get(&self, id_or_tag: &str) -> Result<Option<ImageMetadata>> {
+        // Normalize tag for official images (e.g. 'alpine:latest' -> 'library/alpine:latest')
+        let search_tag = if !id_or_tag.starts_with("sha256:") && id_or_tag.split('/').count() == 1 {
+            format!("library/{}", id_or_tag)
+        } else {
+            id_or_tag.to_string()
+        };
+
         // Support lookup by ID or by tag in the repo_tags JSON array
         let row = sqlx::query(
             "SELECT id, repo_tags, parent_id, created, size, layers FROM images 
-             WHERE id = ? OR EXISTS (SELECT 1 FROM json_each(repo_tags) WHERE value = ?)"
+             WHERE id = ? OR EXISTS (SELECT 1 FROM json_each(repo_tags) WHERE value = ? OR value = ?)"
         )
             .bind(id_or_tag)
             .bind(id_or_tag)
+            .bind(&search_tag)
             .fetch_optional(&self.pool)
             .await
             .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
