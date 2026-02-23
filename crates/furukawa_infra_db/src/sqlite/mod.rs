@@ -139,14 +139,14 @@ impl ImageMetadataStore for SqliteStore {
             id_or_tag.to_string()
         };
 
-        // Support lookup by ID or by tag in the repo_tags JSON array
+        // Support lookup by ID or by substring match in the repo_tags JSON array string
         let row = sqlx::query(
             "SELECT id, repo_tags, parent_id, created, size, layers FROM images 
-             WHERE id = ? OR EXISTS (SELECT 1 FROM json_each(repo_tags) WHERE value = ? OR value = ?)"
+             WHERE id = ? OR repo_tags LIKE ? OR repo_tags LIKE ?"
         )
             .bind(id_or_tag)
-            .bind(id_or_tag)
-            .bind(&search_tag)
+            .bind(format!("%\"{}\"%", id_or_tag))
+            .bind(format!("%\"{}\"%", search_tag))
             .fetch_optional(&self.pool)
             .await
             .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
