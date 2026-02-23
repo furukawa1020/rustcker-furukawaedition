@@ -1,49 +1,51 @@
-# Rustker Desktop (formerly HATAKE Desktop)
+# Rustker Desktop (旧称: HATAKE Desktop)
 
-Rustker Desktop is a lightweight, high-performance, and strictly compliant Docker Desktop alternative tailored for Windows and WSL2 environments. Built entirely from scratch using **Rust**, it integrates seamlessly with your local system while maintaining a strikingly low resource footprint.
+Rustker Desktopは、Windows環境およびWSL2向けに特化した、軽量・高速かつ厳格な仕様に準拠した **Docker Desktopの代替アプリケーション** です。バックエンドのコンテナエンジンからフロントエンドのGUI連携に至るまで、すべてをゼロから **Rust** で構築することで、極限までリソース消費を抑えた快適なコンテナ開発環境を提供します。
 
-## Why Rust? (The Rustker Advantage)
+## なぜ Rust なのか？ (Rustkerのアドバンテージ)
 
-Building the core container engine (`rustkerd`) and the desktop application in Rust provides several distinct advantages over traditional Go-based or Electron-based solutions:
+コアのコンテナエンジン（`rustkerd`）とデスクトップアプリケーションをRustで構築したことにより、従来のGo言語ベースやElectronベースのソリューションに比べて、以下の圧倒的な優位性を持っています：
 
-### 1. 🚀 Unrivaled Resource Efficiency & Launch Speed
-Unlike Docker Desktop, which can consume gigabytes of RAM in the background even when idling, Rustker is compiled to a pure native binary with no Garbage Collector (GC). The background engine takes up only **tens of megabytes** of memory, ensuring your PC stays snappy while the engine is running. Launch speeds are nearly instantaneous.
+### 1. 🚀 圧倒的な省リソースと起動の速さ
+バックグラウンドに常駐しているだけで数GBのメモリを消費することがあるDocker Desktopとは異なり、Rustkerはガベージコレクタ（GC）を持たない純粋なネイティブバイナリにコンパイルされます。バックグラウンドエンジンが消費するメモリは **わずか数十メガバイト** に収まり、起動も一瞬です。PCのパフォーマンスを一切犠牲にしません。
 
-### 2. 🛡️ Absolute Safety via Type-Safe FSMs
-Container management involves complex state transitions (Created -> Running -> Stopped -> Deleted). In Rustker, these rules are enforced as **Compile-Time State Machines**. It is structurally impossible for the backend to accidentally start a "Deleted" container or delete a "Running" container. Rust’s strict compiler eliminates the nil-pointer dereferences and state-handling bugs common in complex Go orchestration tools.
+### 2. 🛡️ 型安全なステートマシンによる完全な堅牢性
+コンテナの管理には複雑な状態遷移（Created -> Running -> Stopped -> Deleted）が伴います。Rustkerでは、これらのルールを **コンパイル時のステートマシン（FSM）** として強制しています。これにより「すでに削除されたコンテナを起動する」といった不正な操作は、バグとして実行時に発生するのではなく、**コンパイルエラーとして未然に防がれます。** Go言語などの複雑なオーケストレーションツールで頻発する、想定外の状態変化やNilポインタアクセスが構造的に発生しません。
 
-### 3. 🔌 Low-Level Windows & WSL Integration
-Rustker operates natively on Windows while deeply manipulating Linux processes running within WSL2. Rust’s supreme low-level capabilities allow it to communicate directly with Win32 APIs and Linux `chroot` environments simultaneously without the overhead of heavy abstractions. (e.g. Our custom layer unpacking cleanly handles Windows symlink restrictions automatically).
+### 3. 🔌 Windows & WSLとの強力で無駄のない低レベル結合
+RustkerはWindows上でネイティブに動作しながら、WSL2上のLinuxプロセス（`wsl.exe`）を直接操作し、リアルタイムにファイルシステムを読み書きします。Rustの強力な低レベルシステムコール制御により、重い抽象化レイヤーを挟むことなく、Win32 APIとLinuxの`chroot`環境を同時に、かつ安全にハンドリングできます。（例: Windowsでは管理者権限がないと作成できないLinuxのシンボリックリンクレイヤー展開も、独自のフォールバック処理で安全に解決しています）。
 
-### 4. 🎨 Lightning Fast GUI (Tauri)
-By pairing Rust with **Tauri** (instead of Electron), the Rustker Desktop GUI relies on the native OS Webview. This avoids bundling an entire Chromium instance, keeping the installer size small and rendering the frontend extremely responsive and lightweight.
+### 4. 🎨 Tauriによる信じられないほど軽いGUI
+Rustの特権として、巨大なChromiumブラウザを丸ごと内包するElectronの代わりに **Tauri** をフロントエンドに採用しています。これにより、OS標準のWebViewを利用できるため、インストーラーのサイズが劇的に小さくなり、UIのレンダリングも極めて軽快に行われます。
 
-### 5. ⚡ Fearless Concurrency
-Containers are concurrent by nature (downloading layers, streaming UTF-16 logs cleanly from `wsl.exe`, managing networks). Rust’s ownership model provides fearless parallel execution. Concurrent tasks are safely resolved at compile time, eliminating data races.
+### 5. ⚡ 安全な並行処理（Fearless Concurrency）
+「巨大なイメージレイヤーの並行ダウンロード」「WSLのUTF-16ログのリアルタイム非同期ストリーミング」「ネットワーク管理」など、コンテナエンジンは並行処理の塊です。Rustの「所有権モデル」により、マルチスレッド環境で発生しがちなデータ競合（Data Race）をコンパイル時に完全に排除しており、クラッシュしない安全な並列実行を実現しています。
 
-## Features Built
-- Content-addressable Image Store (pulls images directly from Docker Hub)
-- Full Container Lifecycle Management
-- Volume Mounting & Port Forwarding
-- Isolated Custom Networks
-- Live log streaming with native UTF-16 WSL support
-- Docker Compose parsing natively using `rustker_compose`
-- Beautiful, intuitive Dark Mode GUI (Tauri + React)
+---
 
-## Local Build & Installation
+## 実装済み機能
+- コンテントアドレッサブルなイメージストア (Docker Hubから直接 `alpine` 等をネイティブPull)
+- 完全なコンテナ・ライフサイクル管理 (Create, Start, Stop, Delete)
+- ホストからコンテナへのボリュームマウント (`-v`) & ポートフォワーディング
+- 隔離されたカスタムネットワークの作成とアタッチ
+- WSLのネイティブUTF-16出力に対応したリアルタイム・ライブログストリーミング
+- `rustker_compose` によるネイティブな Docker Compose パースとマルチコンテナ起動
+- モダンで直感的なダークモードGUI (Tauri + React)
 
-1. **Build the Backend Engine (`rustkerd`)**
+## ローカルビルドとインストール方法
+
+1. **バックエンドエンジン (`rustkerd`) のビルド**
    ```powershell
    cargo build --release --bin rustkerd
    ```
-2. **Setup Sidecar Native Binaries**
+2. **ネイティブバイナリ（サイドカー）のセットアップ**
    ```powershell
    cd desktop
    .\setup-binaries.ps1
    ```
-3. **Build the Tauri Installer**
+3. **Tauri インストーラー（GUI）のビルド**
    ```powershell
    npm install
    npm run tauri build
    ```
-   *The built `.msi` and `.exe` wizard installer will be located in `desktop/src-tauri/target/release/bundle/msi/`.*
+   *ビルドが完了すると、セットアップウィザード（`.msi` および `.exe`）が `desktop/src-tauri/target/release/bundle/msi/` に生成されます。*
