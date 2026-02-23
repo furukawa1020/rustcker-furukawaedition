@@ -131,9 +131,14 @@ impl ImageMetadataStore for SqliteStore {
         Ok(images)
     }
 
-    async fn get(&self, id: &str) -> Result<Option<ImageMetadata>> {
-        let row = sqlx::query("SELECT id, repo_tags, parent_id, created, size, layers FROM images WHERE id = ?")
-            .bind(id)
+    async fn get(&self, id_or_tag: &str) -> Result<Option<ImageMetadata>> {
+        // Support lookup by ID or by tag in the repo_tags JSON array
+        let row = sqlx::query(
+            "SELECT id, repo_tags, parent_id, created, size, layers FROM images 
+             WHERE id = ? OR EXISTS (SELECT 1 FROM json_each(repo_tags) WHERE value = ?)"
+        )
+            .bind(id_or_tag)
+            .bind(id_or_tag)
             .fetch_optional(&self.pool)
             .await
             .map_err(|e| furukawa_common::diagnostic::Error::new(DbError(e)))?;
