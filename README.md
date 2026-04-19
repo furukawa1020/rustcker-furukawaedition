@@ -1,6 +1,6 @@
 # Rustker Desktop (旧称: HATAKE Desktop)
 
-Rustker Desktopは、Windows環境およびWSL2向けに特化した、軽量・高速かつ厳格な仕様に準拠した **Docker Desktopの代替アプリケーション** です。
+Rustker Desktopは、Windows環境およびWSL2向けに特化した、軽量・高速かつ厳格な仕様に準拠した **Docker Desktopの代替アプリケーション** です！
 バックエンドのコンテナエンジン（`rustkerd`）からフロントエンドのGUI連携に至るまで、すべてをゼロから **Rust** で構築することで、極限までリソース消費を抑えた快適なコンテナ開発環境を提供します。
 
 ---
